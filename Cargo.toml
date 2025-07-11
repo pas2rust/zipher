@@ -2,6 +2,20 @@
 name = "zipher"
 version = "0.0.1"
 edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/pas2rust/zipher"
+readme = "README.md"
+exclude = [
+    "tests/*",
+    "tests",
+    "main.rs"
+]
+categories = ["cryptography", "encryption", "security", "password-hashing", "post-quantum"]
+description = "Cryptography utilities and implementations including Argon2, bcrypt, post-quantum algorithms and JWT support"
+keywords = ["cryptography", "argon2", "bcrypt", "post-quantum", "jwt"]
+authors = ["pas2rust <pas2000@proton.me>"]
+homepage = "https://github.com/pas2rust/zipher"
+documentation = "https://docs.rs/zipher"
 
 [dependencies]
 # Always-included dependencies
