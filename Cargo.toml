@@ -1,0 +1,49 @@
+[package]
+name = "zipher"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+# Always-included dependencies
+regex = "1.11.1"
+kenzu = "0.0"
+mokuya = "0.0"
+
+# Optional cryptography dependencies
+chacha20poly1305 = { version = "0.10", optional = true, features = ["rand_core"] }
+aes-gcm-siv = { version = "0.11", optional = true }
+argon2 = { version = "0.5", optional = true }
+rand = { version = "0.9", optional = true }
+hex = { version = "0.4", optional = true }
+jsonwebtoken = { version = "9.3", optional = true }
+serde = { version = "1.0.219", optional = true }
+chrono = { version = "0.4.41", optional = true }
+pqcrypto-mlkem = { version = "0.1", optional = true }
+pqcrypto-mldsa = { version = "0.1", optional = true }
+pqcrypto-traits = { version = "0.3", optional = true }
+bcrypt = { version = "0.17", optional = true }
+
+
+[features]
+default = []
+
+# Symmetric encryption
+chacha20 = ["chacha20poly1305", "rand", "hex"]
+aes = ["aes-gcm-siv", "rand", "hex"]
+
+# Password hashing
+argon2 = ["dep:argon2"]
+bcrypt = ["dep:bcrypt"]
+
+# JWT (JSON Web Tokens)
+jwt = ["jsonwebtoken", "serde", "chrono"]
+
+# Post-quantum cryptography
+pqkem = ["pqcrypto-mlkem", "pqcrypto-traits"]
+pqdsa = ["pqcrypto-mldsa", "pqcrypto-traits"]
+
+# Enable all post-quantum features
+postquantum = ["pqkem", "pqdsa"]
+
+[dev-dependencies]
+zipher = { path = ".", features = ["chacha20", "aes", "argon2", "jwt", "pqkem", "pqdsa", "bcrypt"] }
