@@ -10,7 +10,7 @@ exclude = [
     "tests",
     "main.rs"
 ]
-categories = ["cryptography", "encryption", "security", "password-hashing", "post-quantum"]
+categories = ["cryptography", "security"]
 description = "Cryptography utilities and implementations including Argon2, bcrypt, post-quantum algorithms and JWT support"
 keywords = ["cryptography", "argon2", "bcrypt", "post-quantum", "jwt"]
 authors = ["pas2rust <pas2000@proton.me>"]
