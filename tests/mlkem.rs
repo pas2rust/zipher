@@ -1,4 +1,5 @@
-use zipher::components::mlkem::{MlKem, MlKemErr, MlKemError};
+use zipher::components::mlkem::{MlKem, MlKemErr, MlKemError, Pk, Sk};
+use zipher::pqcrypto_mlkem::mlkem1024_keypair;
 
 #[test]
 fn encapsulate_and_decapsulate_successfully() -> Result<(), MlKemErr> {
@@ -36,28 +37,18 @@ fn decapsulate_invalid_ciphertext_should_fail() {
 }
 
 #[test]
-fn encapsulate_decapsulate_with_cloned_instance() -> Result<(), MlKemErr> {
-    let mut kem_sender = MlKem::new();
+fn encapsulate_decapsulate_between_alice_and_bob() -> Result<(), MlKemErr> {
+    let (pk, sk) = mlkem1024_keypair();
+    let mut bob = MlKem::new();
+    bob.public_key(Pk(pk)).secret_key(Sk(sk));
+    let mut alice = MlKem::new();
+    alice.public_key(bob.public_key.clone());
 
-    let mut kem_receiver = MlKem {
-        public_key: kem_sender.public_key.clone(),
-        secret_key: kem_sender.secret_key.clone(),
-        ciphertext: None,
-        shared_secret: None,
-    };
+    let ciphertext = alice.encapsulate()?;
+    let alice_shared_secret = alice.shared_secret.clone().expect("missing");
+    let bob_shared_secret = bob.decapsulate(&ciphertext)?;
 
-    let ciphertext = kem_sender.encapsulate()?;
-    let shared_by_sender = kem_sender
-        .shared_secret
-        .clone()
-        .expect("sender shared secret missing");
-
-    let shared_by_receiver = kem_receiver.decapsulate(&ciphertext)?;
-
-    assert_eq!(
-        shared_by_sender, shared_by_receiver,
-        "Shared secrets should match between sender and receiver"
-    );
+    assert_eq!(alice_shared_secret, bob_shared_secret);
 
     Ok(())
 }

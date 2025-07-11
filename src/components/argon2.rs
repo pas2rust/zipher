@@ -38,7 +38,7 @@ pub struct Argon {
     #[set(value = Version::V0x13)]
     version: Version,
     #[set(value = Params::new(
-        65536,
+        6400,
         4,
         4,
         32.into()
