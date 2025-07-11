@@ -1,4 +1,4 @@
-use mokuya::components::error::Error;
+use zipher::mokuya::components::error::Error;
 use zipher::components::chacha20poly1305::{ChaCha, ChaChaError};
 
 #[test]

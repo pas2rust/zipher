@@ -52,7 +52,7 @@ The AES-GCM-SIV mode provides nonce misuse resistance, meaning it is safer even 
 
 ```rust
 use zipher::components::aes_gcm_siv::{Aes, AesError};
-use mokuya::components::error::Error;
+use zipher::mokuya::components::error::Error;
 
 fn main() -> Result<(), Error<AesError>> {
     // Create a new AES encryptor with a random key and nonce
@@ -92,7 +92,7 @@ ChaCha20-Poly1305 is a fast and secure AEAD cipher suitable for many application
 
 ```rust
 use zipher::components::chacha20poly1305::{ChaCha, ChaChaError};
-use mokuya::components::error::Error;
+use zipher::mokuya::components::error::Error;
 
 fn main() -> Result<(), Error<ChaChaError>> {
     // Create a new ChaCha20-Poly1305 encryptor with a random key and nonce
@@ -130,7 +130,7 @@ This example demonstrates how to create, encode, and decode a JSON Web Token (JW
 
 ```rust
 use zipher::components::jwt::{Jwt, JwtError, Claims};
-use mokuya::components::error::Error;
+use zipher::mokuya::components::error::Error;
 
 fn main() -> Result<(), Error<JwtError>> {
     // Create a new JWT instance with a random key and default HS256 algorithm
@@ -169,7 +169,7 @@ This example demonstrates how to securely hash and verify passwords using Argon2
 
 ```rust
 use zipher::components::argon2::{Argon, ArgonError};
-use mokuya::components::error::Error;
+use zipher::mokuya::components::error::Error;
 
 fn main() -> Result<(), Error<ArgonError>> {
     // Create a new Argon2 hasher with random salt and secret
@@ -210,7 +210,7 @@ Bcrypt is a widely used password hashing function that is intentionally slow to 
 
 ```rs
 use zipher::components::bcrypt::{Bcrypt, BcryptError};
-use mokuya::components::error::Error;
+use zipher::mokuya::components::error::Error;
 
 fn main() -> Result<(), Error<BcryptError>> {
     // Create a new Bcrypt instance with default cost
@@ -245,7 +245,7 @@ MLDSA is a post-quantum digital signature scheme. This module supports both embe
 
 ```rs
 use zipher::components::mldsa::{MlDsa, MlDsaError, MlDsaErr};
-use mokuya::components::error::Error;
+use zipher::mokuya::components::error::Error;
 
 fn main() -> Result<(), MlDsaErr> {
     // Create a new MLDSA instance with a keypair

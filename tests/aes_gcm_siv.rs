@@ -1,4 +1,4 @@
-use mokuya::components::error::Error;
+use zipher::mokuya::components::error::Error;
 use zipher::components::aes_gcm_siv::{Aes, AesError};
 
 #[test]
