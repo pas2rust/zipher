@@ -51,10 +51,9 @@ This example demonstrates how to use the AES-GCM-SIV authenticated encryption mo
 The AES-GCM-SIV mode provides nonce misuse resistance, meaning it is safer even if nonces are accidentally reused.
 
 ```rust
-use zipher::components::aes_gcm_siv::{Aes, AesError};
-use zipher::mokuya::components::error::Error;
+use zipher::components::aes_gcm_siv::{Aes, AesErr};
 
-fn main() -> Result<(), Error<AesError>> {
+fn main() -> Result<(), AesErr> {
     // Create a new AES encryptor with a random key and nonce
     let mut aes = Aes::new();
 
@@ -82,7 +81,7 @@ fn main() -> Result<(), Error<AesError>> {
 -  .decrypt() decrypts the ciphertext back to the original plaintext bytes.
 -  Internally, it uses the aes_gcm_siv crate's Aes256GcmSiv with a 12-byte nonce and 32-byte key.
 -  The ciphertext is encoded in hex for easy storage or transmission.
--  If encryption or decryption fails, errors are returned with detailed kinds.
+-  If encryption or decryption fails, Errs are returned with detailed kinds.
 -  Additionally, the key and nonce fields can be explicitly set to use your own cryptographic key and nonce instead of the randomly generated ones. This allows full control over encryption parameters when needed.
 
 ### 🔐 ChaCha20-Poly1305 Encryption Example
@@ -91,10 +90,9 @@ This example demonstrates how to use the ChaCha20-Poly1305 authenticated encrypt
 ChaCha20-Poly1305 is a fast and secure AEAD cipher suitable for many applications.
 
 ```rust
-use zipher::components::chacha20poly1305::{ChaCha, ChaChaError};
-use zipher::mokuya::components::error::Error;
+use zipher::components::chacha20poly1305::{ChaCha, ChaChaErr};
 
-fn main() -> Result<(), Error<ChaChaError>> {
+fn main() -> Result<(), ChaChaErr> {
     // Create a new ChaCha20-Poly1305 encryptor with a random key and nonce
     let mut chacha = ChaCha::new();
 
@@ -121,7 +119,7 @@ fn main() -> Result<(), Error<ChaChaError>> {
 -  .decrypt() decrypts the ciphertext back to the original plaintext bytes.
 -  Internally, it uses the chacha20poly1305 crate’s ChaCha20Poly1305 with a 12-byte nonce and 32-byte key.
 -  The ciphertext is encoded in hex for easy storage or transmission.
--  If encryption or decryption fails, detailed error kinds are returned.
+-  If encryption or decryption fails, detailed Err kinds are returned.
 -  Additionally, the key and nonce fields can be explicitly set to use your own cryptographic key and nonce instead of the randomly generated ones. This allows full control over encryption parameters when needed.
 
 ### 🪙 JWT Encoding and Decoding Example
@@ -129,10 +127,9 @@ fn main() -> Result<(), Error<ChaChaError>> {
 This example demonstrates how to create, encode, and decode a JSON Web Token (JWT) using HMAC SHA algorithms (HS256, HS384, HS512). It includes claim setting and token expiration handling.
 
 ```rust
-use zipher::components::jwt::{Jwt, JwtError, Claims};
-use zipher::mokuya::components::error::Error;
+use zipher::components::jwt::{Jwt, JwtErr, Claims};
 
-fn main() -> Result<(), Error<JwtError>> {
+fn main() -> Result<(), JwtErr> {
     // Create a new JWT instance with a random key and default HS256 algorithm
     let mut jwt = Jwt::new();
 
@@ -161,17 +158,16 @@ fn main() -> Result<(), Error<JwtError>> {
 -  .decode() verifies and decodes the token, validating expiration and signature.
 -  Supported algorithms: HS256, HS384, HS512 (others are not supported yet).
 -  Expiration (exp) is calculated as the current UTC time plus the specified duration in seconds.
--  Errors are returned with detailed kinds if encoding or decoding fails.
+-  Errs are returned with detailed kinds if encoding or decoding fails.
 
 ### 🔑 Argon2 Password Hashing Example
 
 This example demonstrates how to securely hash and verify passwords using Argon2id with customizable parameters and secret-based key hardening.
 
 ```rust
-use zipher::components::argon2::{Argon, ArgonError};
-use zipher::mokuya::components::error::Error;
+use zipher::components::argon2::{Argon, ArgonErr};
 
-fn main() -> Result<(), Error<ArgonError>> {
+fn main() -> Result<(), ArgonErr> {
     // Create a new Argon2 hasher with random salt and secret
     let mut argon = Argon::new();
 
@@ -201,7 +197,7 @@ fn main() -> Result<(), Error<ArgonError>> {
 - .verify() verifies the password against the stored hash.
 - Internally it uses the argon2 crate with secret support for extra protection.
 - The output is a standard PHC string ($argon2id$v=19$m=...) suitable for storage.
-- Errors are returned with typed context if hashing or verification fails.
+- Errs are returned with typed context if hashing or verification fails.
 
 ### 🔑 Bcrypt Password Hashing Example
 
@@ -209,10 +205,9 @@ This example shows how to securely hash and verify passwords using the Bcrypt al
 Bcrypt is a widely used password hashing function that is intentionally slow to resist brute-force attacks.
 
 ```rs
-use zipher::components::bcrypt::{Bcrypt, BcryptError};
-use zipher::mokuya::components::error::Error;
+use zipher::components::bcrypt::{Bcrypt, BcryptErr};
 
-fn main() -> Result<(), Error<BcryptError>> {
+fn main() -> Result<(), BcryptErr> {
     // Create a new Bcrypt instance with default cost
     let mut bcrypt = Bcrypt::new();
 
@@ -237,15 +232,14 @@ fn main() -> Result<(), Error<BcryptError>> {
 - .password() sets the plaintext password to hash.
 - .encrypt() hashes the password and stores the resulting hash internally.
 - .verify() checks whether the stored hash matches the current password.
-- If verification fails, an error with kind BcryptError::VerifyFailed is returned.
+- If verification fails, an Err with kind BcryptErr::VerifyFailed is returned.
 
 ### 🧬 Post-Quantum MLDSA Signatures
 
 MLDSA is a post-quantum digital signature scheme. This module supports both embedded and detached signatures using the [pqcrypto-mldsa] crate.
 
 ```rs
-use zipher::components::mldsa::{MlDsa, MlDsaError, MlDsaErr};
-use zipher::mokuya::components::error::Error;
+use zipher::components::mldsa::{MlDsa, MlDsaErr};
 
 fn main() -> Result<(), MlDsaErr> {
     // Create a new MLDSA instance with a keypair
@@ -299,7 +293,7 @@ Two parties—Alice and Bob—securely derive a shared secret using public-key e
 
 ```rust
 use zipher::pqcrypto_mlkem::mlkem1024_keypair;
-use zipher::components::mlkem::{MlKem, MlKemErr, MlKemError, Pk, Sk};
+use zipher::components::mlkem::{MlKem, MlKemErr, Pk, Sk};
 
 fn main() -> Result<(), MlKemErr> {
     // Bob generates a fresh post-quantum keypair (public and secret keys)

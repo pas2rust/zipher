@@ -1,5 +1,5 @@
-use zipher::mokuya::components::error::Error;
 use zipher::components::chacha20poly1305::{ChaCha, ChaChaError};
+use zipher::mokuya::components::error::Error;
 
 #[test]
 fn encrypt_decrypt() -> Result<(), Error<ChaChaError>> {

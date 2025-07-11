@@ -1,5 +1,5 @@
-use zipher::mokuya::components::error::Error;
 use zipher::components::aes_gcm_siv::{Aes, AesError};
+use zipher::mokuya::components::error::Error;
 
 #[test]
 fn encrypt_decrypt() -> Result<(), Error<AesError>> {
