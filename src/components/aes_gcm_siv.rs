@@ -24,9 +24,9 @@ fn aes_err<T: ToString>(kind: AesError, code: u8) -> impl FnOnce(T) -> AesErr {
     }
 }
 
-type AesKey = [u8; 32];
-type AesNonce = [u8; 12];
-type AesErr = Error<AesError>;
+pub type AesKey = [u8; 32];
+pub type AesNonce = [u8; 12];
+pub type AesErr = Error<AesError>;
 
 #[derive(Debug, M_Builder)]
 pub struct Aes {

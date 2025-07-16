@@ -11,7 +11,7 @@ pub enum BcryptError {
     InvalidHash,
 }
 
-type BcryptErr = Error<BcryptError>;
+pub type BcryptErr = Error<BcryptError>;
 
 fn bcrypt_err<T: ToString>(kind: BcryptError, code: u8) -> impl FnOnce(T) -> BcryptErr {
     move |err: T| {

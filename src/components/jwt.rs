@@ -22,7 +22,7 @@ pub enum JwtError {
     DecodingError,
 }
 
-type JwtErr = Error<JwtError>;
+pub type JwtErr = Error<JwtError>;
 
 #[derive(Debug, Serialize, Deserialize, M_Builder, Default)]
 pub struct Claims {

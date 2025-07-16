@@ -23,9 +23,9 @@ fn chacha_err<T: ToString>(kind: ChaChaError, code: u8) -> impl FnOnce(T) -> Cha
     }
 }
 
-type ChaChaKey = [u8; 32];
-type ChaChaNonce = [u8; 12];
-type ChaChaErr = Error<ChaChaError>;
+pub type ChaChaKey = [u8; 32];
+pub type ChaChaNonce = [u8; 12];
+pub type ChaChaErr = Error<ChaChaError>;
 
 #[derive(Debug)]
 pub struct ChaChaDecrypt(Vec<u8>);

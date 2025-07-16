@@ -17,7 +17,7 @@ pub enum ArgonError {
     InvalidHash,
 }
 
-type ArgonErr = Error<ArgonError>;
+pub type ArgonErr = Error<ArgonError>;
 
 fn argon_err<T: ToString>(kind: ArgonError, code: u8) -> impl FnOnce(T) -> ArgonErr {
     move |err: T| {
