@@ -5,7 +5,7 @@ use zipher::components::jwt::{Claims, Jwt};
 fn jwt_encode_decode() {
     let mut jwt = Jwt::new();
     let mut claims = Claims::new();
-    claims.sub("user123".to_string()).exp::<usize>(3600);
+    claims.sub("user123").exp::<usize>(3600);
 
     jwt.claims(claims);
     jwt.encode().unwrap();

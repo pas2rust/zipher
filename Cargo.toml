@@ -1,6 +1,6 @@
 [package]
 name = "zipher"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/pas2rust/zipher"
@@ -50,7 +50,7 @@ argon2 = ["dep:argon2"]
 bcrypt = ["dep:bcrypt"]
 
 # JWT (JSON Web Tokens)
-jwt = ["jsonwebtoken", "serde", "chrono"]
+jwt = ["jsonwebtoken", "serde", "chrono", "rand"]
 
 # Post-quantum cryptography
 pqkem = ["pqcrypto-mlkem", "pqcrypto-traits"]
