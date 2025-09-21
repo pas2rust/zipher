@@ -19,11 +19,10 @@ jobs:
       - name: Count Test Functions
         id: test_count_step
         run: |
-         cd zipher
-         TEST_COUNT=$(grep -rhoP '\s*#\[test\]\s*fn ' zipher/tests zipher/src | wc -l)
-         echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
+          cd zipher/tests
+          TEST_COUNT=$(grep -r '#\[test\]' . | wc -l)
+          echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
 
-      
       - name: Checkout Badges Repository
         uses: actions/checkout@v4
         with:
@@ -58,3 +57,4 @@ jobs:
         with:
           commit_message: "chore: Update zipher test count badge"
           file_pattern: 'badges/zipher-tests.svg'
+          skip_dirty_check: true
