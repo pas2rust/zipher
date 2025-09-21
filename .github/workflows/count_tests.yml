@@ -19,7 +19,7 @@ jobs:
       - name: Count Test Functions
         id: test_count_step
         run: |
-          cd zipher
+          cd zipher/tests
           TEST_COUNT=$(find . -name "*.rs" -exec grep -l -E '^\s*#\[test\]\s*fn ' {} + | wc -l)
           echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
       
