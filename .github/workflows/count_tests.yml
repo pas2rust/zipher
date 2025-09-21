@@ -19,10 +19,9 @@ jobs:
       - name: Count Test Functions
         id: test_count_step
         run: |
-          # Este comando busca por #[test] e conta as funções.
-          TEST_COUNT=$(grep -r -E '^\s*#\[test\]\s*fn ' zipher/src/ zipher/tests/ | wc -l)
+          cd zipher
+          TEST_COUNT=$(grep -r -E '^\s*#\[test\]\s*fn ' src/ tests/ | wc -l)
           echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
-
       - name: Checkout Badges Repository
         uses: actions/checkout@v4
         with:
@@ -30,11 +29,10 @@ jobs:
           path: badges
           token: ${{ secrets.BADGE_TOKEN }}
 
-      - name: Generate Badge SVG
+     - name: Generate Badge SVG
         run: |
           TEST_COUNT=${{ steps.test_count_step.outputs.TEST_COUNT }}
           
-          # Código SVG...
           SVG_CONTENT="<svg width='110' height='20' xmlns='http://www.w3.org/2000/svg' role='img'>
             <linearGradient id='s' x2='0' y2='100%'>
               <stop offset='0' stop-color='#bbb' stop-opacity='.1'/>
@@ -52,15 +50,14 @@ jobs:
             </g>
           </svg>"
 
-          mkdir -p badges/repo/badges
-          echo "$SVG_CONTENT" > badges/repo/badges/zipher-tests.svg
+          echo "$SVG_CONTENT" > badges/zipher-tests.svg
 
       - name: Commit and Push Badge
         run: |
           cd badges
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add repo/badges/zipher-tests.svg
+          git add zipher-tests.svg
           git commit -m "chore: Update zipher test count badge"
           git -c http.extraheader="AUTHORIZATION: basic $(echo -n x-oauth-basic:${{ secrets.BADGE_TOKEN }} | base64)" \
           push origin main
