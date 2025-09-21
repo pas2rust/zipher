@@ -46,6 +46,20 @@ fn reencrypt_overwrites_previous() -> Result<(), Error<AesError>> {
     let decrypted = aes.decrypt()?.to_string();
     assert_eq!(decrypted, "second");
     assert_ne!(first_cipher, second_cipher);
-    
+
+    Ok(())
+}
+
+#[test]
+fn encrypt_decrypt_unicode() -> Result<(), Error<AesError>> {
+    let mut aes = Aes::new();
+    let text = "Hellow, world! 🐱🔒 こんにちは";
+
+    let cipher = aes.target(text).encrypt()?;
+    let decrypted = aes.decrypt()?.to_string();
+
+    assert_eq!(decrypted, text);
+    assert_ne!(cipher, text);
+
     Ok(())
 }
