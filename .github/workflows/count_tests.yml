@@ -16,20 +16,13 @@ jobs:
         with:
           path: zipher
 
-      - name: Debug Test Count
-        run: |
-          echo "grep count..."
-          cd zipher
-          grep_raw_output=$(grep -r -E '^\s*#\[test\]\s*fn ' src/ tests/ | wc -l)
-          echo "output: $grep_raw_output"
-          echo "TEST_COUNT: ${{ steps.test_count_step.outputs.TEST_COUNT }}"
-
       - name: Count Test Functions
         id: test_count_step
         run: |
           cd zipher
-          TEST_COUNT=$(grep -r -E '^\s*#\[test\]\s*fn ' src/ tests/ | wc -l)
+          TEST_COUNT=$(find . -name "*.rs" -exec grep -l -E '^\s*#\[test\]\s*fn ' {} + | wc -l)
           echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
+      
       - name: Checkout Badges Repository
         uses: actions/checkout@v4
         with:
@@ -40,7 +33,6 @@ jobs:
       - name: Generate Badge SVG
         run: |
           TEST_COUNT=${{ steps.test_count_step.outputs.TEST_COUNT }}
-          
           SVG_CONTENT="<svg width='110' height='20' xmlns='http://www.w3.org/2000/svg' role='img'>
             <linearGradient id='s' x2='0' y2='100%'>
               <stop offset='0' stop-color='#bbb' stop-opacity='.1'/>
