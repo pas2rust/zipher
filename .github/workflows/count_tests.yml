@@ -53,10 +53,12 @@ jobs:
           echo "$SVG_CONTENT" > badges/zipher-tests.svg
 
       - name: Stage changes
-        run: git add -f badges/zipher-tests.svg
+        run: |
+          git add badges/zipher-tests.svg
 
       - name: Configure Git safe directory
-        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+        run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
 
       - name: Auto-Commit Badge
         uses: stefanzweifel/git-auto-commit-action@v4
