@@ -56,3 +56,5 @@ jobs:
           commit_message: "chore: Update zipher test count badge"
           file_pattern: 'zipher-tests.svg'
           repository: badges
+          skip_dirty_check: true
+          push_options: '--force'
