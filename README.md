@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/crates/l/zipher.svg)](https://github.com/pas2rust/zipher/blob/main/LICENSE)
 ![GitHub top language](https://img.shields.io/github/languages/top/pas2rust/zipher?color=orange&logo=rust&style=flat&logoColor=white)
 ![GitHub stars](https://img.shields.io/github/stars/pas2rust/zipher?color=success&style=flat&logo=github)
-![GitHub forks](https://img.shields.io/github/forks/pas2rust/zipher?color=orange&logo=Furry%20Network%20Network&style=flat&logoColor=white)
+![GitHub forks](https://img.shields.io/github/forks/pas2rust/zipher?color=orange&logo=Furry%20Network&style=flat&logoColor=white)
 ![Tests](https://raw.githubusercontent.com/pas2rust/badges/main/zipher-tests.svg)
 ![Crates.io downloads](https://img.shields.io/crates/d/zipher.svg)
 ![GitHub last commit](https://img.shields.io/github/last-commit/pas2rust/zipher?color=ff69b4&label=update&logo=git&style=flat&logoColor=white)
