@@ -9,21 +9,31 @@ on:
 jobs:
   update_test_count:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout Repository
+      - name: Checkout Zipher Repository
         uses: actions/checkout@v4
+        with:
+          path: zipher
 
       - name: Count Test Functions
         id: test_count_step
         run: |
-          TEST_COUNT=$(grep -r -E '^ *fn test_.*' src/ tests/ | wc -l)
+          # Este comando busca por #[test] e conta as funções.
+          TEST_COUNT=$(grep -r -E '^\s*#\[test\]\s*fn ' zipher/src/ zipher/tests/ | wc -l)
           echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Checkout Badges Repository
+        uses: actions/checkout@v4
+        with:
+          repository: pas2rust/badges
+          path: badges
+          token: ${{ secrets.BADGE_TOKEN }}
 
       - name: Generate Badge SVG
         run: |
           TEST_COUNT=${{ steps.test_count_step.outputs.TEST_COUNT }}
+          
+          # Código SVG...
           SVG_CONTENT="<svg width='110' height='20' xmlns='http://www.w3.org/2000/svg' role='img'>
             <linearGradient id='s' x2='0' y2='100%'>
               <stop offset='0' stop-color='#bbb' stop-opacity='.1'/>
@@ -40,12 +50,16 @@ jobs:
               <text x='775' y='140' transform='scale(.1)' fill='#fff' textLength='530'>$TEST_COUNT</text>
             </g>
           </svg>"
-          echo "$SVG_CONTENT" > tests_badge.svg
 
-      - name: Commit and Save the Badge
+          # Cria o diretório e salva o badge no novo caminho
+          mkdir -p badges/repo/badges
+          echo "$SVG_CONTENT" > badges/repo/badges/zipher-tests.svg
+
+      - name: Commit and Push Badge
         run: |
+          cd badges
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tests_badge.svg
-          git commit -m "chore: Update test count badge"
+          git add repo/badges/zipher-tests.svg
+          git commit -m "chore: Update zipher test count badge"
           git push
