@@ -43,7 +43,7 @@ jobs:
 {"schemaVersion":1,"label":"test-cases","message":"${COUNT}","color":"${COLOR}"}
 EOF
 
-      - name: Push to gh-pages
+       - name: Commit badge to master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COUNT: ${{ steps.count_tests.outputs.count }}
@@ -51,19 +51,12 @@ EOF
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # checkout gh-pages or create if it doesn't exist
-          if git ls-remote --exit-code origin gh-pages; then
-            git fetch origin gh-pages:gh-pages
-            git checkout gh-pages
-          else
-            git checkout --orphan gh-pages
-          fi
+          # Certifica-se de estar na master
+          git checkout master
 
-          # Remove everything (clean branch) and copy badges
-          git rm -rf . || true
           mkdir -p badges
           cp -r ${GITHUB_WORKSPACE}/badges/* badges/
 
           git add badges/test-cases.json
           git commit -m "Update test-cases badge: $COUNT" || echo "No changes to commit"
-          git push -u origin gh-pages --force
+          git push origin master --force
