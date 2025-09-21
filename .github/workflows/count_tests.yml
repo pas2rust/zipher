@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Zipher Repository
         uses: actions/checkout@v4
         with:
-          path: zipher
+          ref: main
 
       - name: Count Test Functions
         id: test_count_step
@@ -52,9 +52,16 @@ jobs:
 
           echo "$SVG_CONTENT" > badges/zipher-tests.svg
 
+      - name: Stage changes
+        run: git add -f badges/zipher-tests.svg
+
+      - name: Configure Git safe directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
       - name: Auto-Commit Badge
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "chore: Update zipher test count badge"
           file_pattern: 'badges/zipher-tests.svg'
-          skip_dirty_check: true
+          branch: main
+          token: ${{ secrets.GITHUB_TOKEN }}
