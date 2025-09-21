@@ -3,7 +3,7 @@ name: CI/CD with Cargo Publish
 on:
   push:
     branches:
-      - main 
+      - main
       - master
 
 jobs:
@@ -22,6 +22,40 @@ jobs:
       - name: Run Tests
         run: cargo test
 
+      - name: Install jq (JSON helper)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Determine whether to publish
+        id: check
+        run: |
+          CRATE_NAME=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')
+          LOCAL_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+
+          echo "Found crate: $CRATE_NAME (local version: $LOCAL_VERSION)"
+
+          REMOTE_JSON=$(curl -s "https://crates.io/api/v1/crates/$CRATE_NAME" || true)
+          REMOTE_VERSION=$(echo "$REMOTE_JSON" | jq -r '.crate.max_version' 2>/dev/null || true)
+
+          if [ -z "$REMOTE_VERSION" ] || [ "$REMOTE_VERSION" = "null" ]; then
+            echo "No published version found on crates.io — will publish."
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Published on crates.io: $REMOTE_VERSION"
+
+          if [ "$LOCAL_VERSION" = "$REMOTE_VERSION" ]; then
+            echo "Local version equals remote ($LOCAL_VERSION). Skipping publish."
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "Local ($LOCAL_VERSION) != Remote ($REMOTE_VERSION). Will publish."
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
       - name: Publish to Crates.io
-        if: success()
-        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+        if: steps.check.outputs.should_publish == 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish --token $CARGO_REGISTRY_TOKEN

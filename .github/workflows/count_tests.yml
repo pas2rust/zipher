@@ -30,7 +30,7 @@ jobs:
           path: badges
           token: ${{ secrets.BADGE_TOKEN }}
 
-      - name: Generate Dynamic Badge SVG
+      - name: Generate Dynamic Badge SVG (no icon)
         run: |
           TEST_COUNT=${{ steps.test_count_step.outputs.TEST_COUNT }}
           DIGITS=${#TEST_COUNT}
@@ -51,16 +51,12 @@ jobs:
               </linearGradient>
               <clipPath id="r"><rect width="$TOTAL_WIDTH" height="20" rx="3" fill="#fff"/></clipPath>
             </defs>
+
             <g clip-path="url(#r)">
               <rect width="$LABEL_WIDTH" height="20" fill="#555"/>
               <rect x="$GREEN_RECT_X" width="$NUMBER_WIDTH" height="20" fill="#4c1"/>
               <rect width="$TOTAL_WIDTH" height="20" fill="url(#s)"/>
             </g>
-            <svg x="6" y="2" width="16" height="16" viewBox="0 0 512 512" style="fill:#fff;" aria-hidden="true">
-              <g>
-                <path d="M441.984,0c-11.865-0.008-21.495,9.58-21.495,21.446c-0.016,11.858,9.58,21.47,21.437,21.486c11.858,0.017,21.479-9.588,21.495-21.454C463.429,9.63,453.841,0.008,441.984,0z"/>
-              </g>
-            </svg>
 
             <g fill="#fff" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" text-rendering="geometricPrecision">
               <text x="$LABEL_MID" y="14" text-anchor="middle">tests</text>
@@ -68,6 +64,7 @@ jobs:
             </g>
           </svg>
           EOF
+
 
       - name: Auto-Commit Badge
         uses: stefanzweifel/git-auto-commit-action@v4
