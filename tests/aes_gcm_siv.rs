@@ -37,3 +37,15 @@ fn encrypt_decrypt_large_data() -> Result<(), Error<AesError>> {
     assert_eq!(decrypt, large_text);
     Ok(())
 }
+
+#[test]
+fn reencrypt_overwrites_previous() -> Result<(), Error<AesError>> {
+    let mut aes = Aes::new();
+    let first_cipher = aes.target("first").encrypt()?;
+    let second_cipher = aes.target("second").encrypt()?;
+    let decrypted = aes.decrypt()?.to_string();
+    assert_eq!(decrypted, "second");
+    assert_ne!(first_cipher, second_cipher);
+    
+    Ok(())
+}
