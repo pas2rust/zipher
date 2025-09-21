@@ -23,7 +23,7 @@ jobs:
           grep_raw_output=$(grep -r -E '^\s*#\[test\]\s*fn ' src/ tests/ | wc -l)
           echo "output: $grep_raw_output"
           echo "TEST_COUNT: ${{ steps.test_count_step.outputs.TEST_COUNT }}"
-          
+
       - name: Count Test Functions
         id: test_count_step
         run: |
@@ -37,7 +37,7 @@ jobs:
           path: badges
           token: ${{ secrets.BADGE_TOKEN }}
 
-     - name: Generate Badge SVG
+      - name: Generate Badge SVG
         run: |
           TEST_COUNT=${{ steps.test_count_step.outputs.TEST_COUNT }}
           
@@ -60,12 +60,8 @@ jobs:
 
           echo "$SVG_CONTENT" > badges/zipher-tests.svg
 
-      - name: Commit and Push Badge
-        run: |
-          cd badges
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add zipher-tests.svg
-          git commit -m "chore: Update zipher test count badge"
-          git -c http.extraheader="AUTHORIZATION: basic $(echo -n x-oauth-basic:${{ secrets.BADGE_TOKEN }} | base64)" \
-          push origin main
+      - name: Auto-Commit Badge
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "chore: Update zipher test count badge"
+          file_pattern: 'badges/zipher-tests.svg'
