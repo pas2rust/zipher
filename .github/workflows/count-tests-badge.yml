@@ -38,19 +38,25 @@ jobs:
         run: |
           mkdir -p badges
           COUNT=${{ steps.count_tests.outputs.count }}
-          if [ "$COUNT" -eq "0" ]; then COLOR="lightgrey"; elif [ "$COUNT" -lt "10" ]; then COLOR="yellow"; else COLOR="brightgreen"; fi
+          if [ "$COUNT" -eq "0" ]; then
+            COLOR="lightgrey"
+          elif [ "$COUNT" -lt "10" ]; then
+            COLOR="yellow"
+          else
+            COLOR="brightgreen"
+          fi
           cat > badges/test-cases.json <<EOF
 {"schemaVersion":1,"label":"test-cases","message":"${COUNT}","color":"${COLOR}"}
 EOF
 
-       - name: Commit badge to master
+      - name: Commit badge to master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COUNT: ${{ steps.count_tests.outputs.count }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
+
           git checkout master
 
           mkdir -p badges
