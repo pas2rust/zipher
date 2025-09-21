@@ -20,7 +20,7 @@ jobs:
         id: test_count_step
         run: |
          cd zipher
-         TEST_COUNT=$(grep -rhoP '#\[test\]\s*fn ' . | wc -l)
+         TEST_COUNT=$(grep -rhoP '\s*#\[test\]\s*fn ' zipher/tests zipher/src | wc -l)
          echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
 
       
