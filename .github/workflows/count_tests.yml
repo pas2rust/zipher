@@ -20,7 +20,7 @@ jobs:
         id: test_count_step
         run: |
          cd zipher
-         TEST_COUNT=$(grep -r '#\[test\]' . | wc -l)
+         TEST_COUNT=$(grep -r '#\[test\]' . | wc -l | xargs)
          echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
       
       - name: Checkout Badges Repository
