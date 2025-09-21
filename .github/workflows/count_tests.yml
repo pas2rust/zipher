@@ -6,6 +6,9 @@ on:
       - main
       - master
 
+permissions:
+  contents: write
+
 jobs:
   update_test_count:
     runs-on: ubuntu-latest
@@ -15,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          submodules: false
 
       - name: Count Test Functions
         id: test_count_step
@@ -53,12 +57,10 @@ jobs:
           echo "$SVG_CONTENT" > badges/zipher-tests.svg
 
       - name: Stage changes
-        run: |
-          git add badges/zipher-tests.svg
+        run: git add -f badges/zipher-tests.svg
 
       - name: Configure Git safe directory
-        run: |
-          git config --global --add safe.directory $GITHUB_WORKSPACE
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
       - name: Auto-Commit Badge
         uses: stefanzweifel/git-auto-commit-action@v4
