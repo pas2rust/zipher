@@ -58,7 +58,6 @@ EOF
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git checkout master
-
           mkdir -p badges
           cp -r ${GITHUB_WORKSPACE}/badges/* badges/
 
