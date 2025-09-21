@@ -12,13 +12,13 @@ jobs:
   count-and-publish:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout repository
+      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2️⃣ Install stable Rust
+      # Install stable Rust
       - name: Install Rust (stable)
         uses: actions-rs/toolchain@v1
         with:
@@ -26,12 +26,12 @@ jobs:
           override: true
           profile: minimal
 
-      # 3️⃣ Build tests (compile only)
+      # Build tests (compile only)
       - name: Build tests (compile only)
         run: |
           cargo test --all --no-run || true
 
-      # 4️⃣ Count test cases
+      # Count test cases
       - name: Count test cases
         id: count_tests
         run: |
@@ -41,7 +41,7 @@ jobs:
                   | wc -l | tr -d ' ')
           echo "count=$count" >> $GITHUB_OUTPUT
 
-      # 5️⃣ Create badge JSON
+      # Create badge JSON
       - name: Create badge JSON
         run: |
           mkdir -p badges
@@ -57,7 +57,7 @@ jobs:
 {"schemaVersion":1,"label":"test-cases","message":"${COUNT}","color":"${COLOR}"}
 EOF
 
-      # 6️⃣ Commit JSON to master
+      # Commit JSON to master
       - name: Commit badge to master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -65,11 +65,9 @@ EOF
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git checkout master
           mkdir -p badges
           cp -r ${GITHUB_WORKSPACE}/badges/* badges/
-
           git add badges/test-cases.json
           git commit -m "Update test-cases badge: $COUNT" || echo "No changes to commit"
           git push origin master --force
