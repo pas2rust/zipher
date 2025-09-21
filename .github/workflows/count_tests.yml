@@ -63,4 +63,4 @@ jobs:
           git add repo/badges/zipher-tests.svg
           git commit -m "chore: Update zipher test count badge"
           git -c http.extraheader="AUTHORIZATION: basic $(echo -n x-oauth-basic:${{ secrets.BADGE_TOKEN }} | base64)" \
-          push origin master
+          push origin main
