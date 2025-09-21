@@ -6,6 +6,7 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/pas2rust/zipher?color=orange&logo=rust&style=flat&logoColor=white)
 ![GitHub stars](https://img.shields.io/github/stars/pas2rust/zipher?color=success&style=flat&logo=github)
 ![GitHub forks](https://img.shields.io/github/forks/pas2rust/zipher?color=orange&logo=Furry%20Network&style=flat&logoColor=white)
+![zipher-tests](https://github.com/pas2rust/badges/blob/main/zipher-tests.svg)
 ![GitHub last commit](https://img.shields.io/github/last-commit/pas2rust/zipher?color=ff69b4&label=update&logo=git&style=flat&logoColor=white)
 
 **`zipher`** is a comprehensive cryptography toolkit for Rust, providing modern encryption, password hashing, post-quantum algorithms, and JWT support in a unified API. Designed for security and ease of use.
