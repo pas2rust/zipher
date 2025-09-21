@@ -61,7 +61,5 @@ jobs:
           commit_user_name: github-actions[bot]
           commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
           commit_author: pas2rust <pas2rust@users.noreply.github.com>
-          commit_options: '--allow-empty'   # <-- create empty commit if nothing changed
-          skip_dirty_check: true            # optional: keep if you want to skip pre-check
-          push_options: '--force'         
+          commit_options: '--allow-empty'   # <-- create empty commit if nothing changed       
           token: ${{ secrets.BADGE_TOKEN }} # required to push to pas2rust/badges
