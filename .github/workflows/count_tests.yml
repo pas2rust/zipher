@@ -1,0 +1,58 @@
+name: Count Tests and Generate Badge
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  update_test_count:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Count Test Functions
+        id: test_count_step
+        run: |
+          # Count all test functions that start with 'fn test_'
+          # in the 'src/' and 'tests/' directories and store the result.
+          TEST_COUNT=$(grep -r -E '^ *fn test_.*' src/ tests/ | wc -l)
+          echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Generate Badge SVG
+        run: |
+          # The TEST_COUNT variable is accessed using GitHub Actions syntax
+          TEST_COUNT=${{ steps.test_count_step.outputs.TEST_COUNT }}
+          
+          # Create an SVG file with the count
+          SVG_CONTENT="<svg width='110' height='20' xmlns='http://www.w3.org/2000/svg' role='img'>
+            <linearGradient id='s' x2='0' y2='100%'>
+              <stop offset='0' stop-color='#bbb' stop-opacity='.1'/>
+              <stop offset='1' stop-opacity='.1'/>
+            </linearGradient>
+            <clipPath id='r'><rect width='110' height='20' rx='3' fill='#fff'/></clipPath>
+            <g clip-path='url(#r)'>
+              <rect width='47' height='20' fill='#555'/>
+              <rect x='47' width='63' height='20' fill='#007ec6'/>
+              <rect width='110' height='20' fill='url(#s)'/>
+            </g>
+            <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='110'>
+              <text x='245' y='140' transform='scale(.1)' fill='#fff' textLength='370'>Tests</text>
+              <text x='775' y='140' transform='scale(.1)' fill='#fff' textLength='530'>$TEST_COUNT</text>
+            </g>
+          </svg>"
+
+          echo "$SVG_CONTENT" > tests_badge.svg
+
+      - name: Commit and Save the Badge
+        run: |
+          # Configure git
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          # Add the badge file, commit it, and push to the repository
+          git add tests_badge.svg
+          git commit -m "chore: Update test count badge"
+          git push
