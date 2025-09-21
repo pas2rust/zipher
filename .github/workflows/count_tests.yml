@@ -52,9 +52,13 @@ jobs:
           echo "$SVG_CONTENT" > badges/zipher-tests.svg
       - name: Auto-Commit Badge
         uses: stefanzweifel/git-auto-commit-action@v4
+        working-directory: badges            # important: run inside the checked-out badges repo
         with:
           commit_message: "chore: Update zipher test count badge"
-          file_pattern: 'zipher-tests.svg'
-          repository: badges
-          skip_dirty_check: true
-          push_options: '--force'
+          file_pattern: 'zipher-tests.svg'   # relative to badges/
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_author: pas2rust <pas2rust@users.noreply.github.com>
+          commit_options: '--allow-empty'   # <-- create empty commit if nothing changed
+          skip_dirty_check: true            # optional: keep if you want to skip pre-check
+          token: ${{ secrets.BADGE_TOKEN }} # required to push to pas2rust/badges
