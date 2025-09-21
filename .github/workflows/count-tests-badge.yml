@@ -46,7 +46,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # JSON listing first
           json_out=$(mktemp)
           if cargo test --all -- --list --format=json 2>/dev/null | tee "${json_out}"; then
             count=$(python3 - <<'PY'
@@ -63,7 +62,6 @@ print(cnt)
 PY
  < "${json_out}")
           else
-            # Fallback text parsing
             text_out=$(mktemp)
             cargo test --all -- --list 2>/dev/null | tee "${text_out}" || true
             count=$(grep -E '^[[:alnum:]_].*' "${text_out}" \
@@ -74,7 +72,6 @@ PY
             fi
           fi
 
-          # Ensure numeric
           if ! echo "${count}" | grep -E '^[0-9]+$' >/dev/null 2>&1; then
             count=0
           fi
@@ -103,10 +100,10 @@ EOF
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./badges
-          destination_dir: .
+          destination_dir: badges
           publish_branch: gh-pages
 
       - name: Output badge URL
         run: |
           echo "Badge JSON published at:"
-          echo "https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/test-cases.json"
+          echo "https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/badges/test-cases.json"
