@@ -52,11 +52,10 @@ jobs:
             </g>
           </svg>"
 
-          # Cria o diretório e salva o badge no novo caminho
           mkdir -p badges/repo/badges
           echo "$SVG_CONTENT" > badges/repo/badges/zipher-tests.svg
 
-     - name: Commit and Push Badge
+      - name: Commit and Push Badge
         run: |
           cd badges
           git config --global user.name 'github-actions[bot]'
@@ -64,4 +63,4 @@ jobs:
           git add repo/badges/zipher-tests.svg
           git commit -m "chore: Update zipher test count badge"
           git -c http.extraheader="AUTHORIZATION: basic $(echo -n x-oauth-basic:${{ secrets.BADGE_TOKEN }} | base64)" \
-          push origin main
+          push origin master
