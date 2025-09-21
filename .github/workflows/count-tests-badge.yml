@@ -3,8 +3,6 @@ name: Count test cases & publish badge
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
@@ -26,17 +24,6 @@ jobs:
           override: true
           profile: minimal
 
-      - name: Cache cargo registry & target
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-
       - name: Build tests (compile only)
         run: |
           cargo test --all --no-run || true
@@ -44,66 +31,39 @@ jobs:
       - name: Count test cases
         id: count_tests
         run: |
-          set -euo pipefail
-
-          json_out=$(mktemp)
-          if cargo test --all -- --list --format=json 2>/dev/null | tee "${json_out}"; then
-            count=$(python3 - <<'PY'
-import sys, json
-cnt = 0
-for line in sys.stdin:
-    try:
-        obj = json.loads(line)
-    except Exception:
-        continue
-    if obj.get("type") == "test":
-        cnt += 1
-print(cnt)
-PY
- < "${json_out}")
-          else
-            text_out=$(mktemp)
-            cargo test --all -- --list 2>/dev/null | tee "${text_out}" || true
-            count=$(grep -E '^[[:alnum:]_].*' "${text_out}" \
-                      | grep -vE '^\s*$' \
-                      | wc -l | tr -d ' ')
-            if [ "${count}" -eq "0" ]; then
-              count=$(grep -E '::' "${text_out}" | wc -l | tr -d ' ')
-            fi
-          fi
-
-          if ! echo "${count}" | grep -E '^[0-9]+$' >/dev/null 2>&1; then
-            count=0
-          fi
-
-          echo "Found ${count} test cases."
-          echo "count=${count}" >> $GITHUB_OUTPUT
+          count=$(cargo test --all -- --list 2>/dev/null | grep -E '^[[:alnum:]_].*' | grep -v '^$' | wc -l | tr -d ' ')
+          echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Create badge JSON
         run: |
           mkdir -p badges
           COUNT=${{ steps.count_tests.outputs.count }}
-          if [ "$COUNT" -eq "0" ]; then
-            COLOR="lightgrey"
-          elif [ "$COUNT" -lt "10" ]; then
-            COLOR="yellow"
-          else
-            COLOR="brightgreen"
-          fi
+          if [ "$COUNT" -eq "0" ]; then COLOR="lightgrey"; elif [ "$COUNT" -lt "10" ]; then COLOR="yellow"; else COLOR="brightgreen"; fi
           cat > badges/test-cases.json <<EOF
 {"schemaVersion":1,"label":"test-cases","message":"${COUNT}","color":"${COLOR}"}
 EOF
-          cat badges/test-cases.json
 
-      - name: Deploy badge to gh-pages
-        uses: peaceiris/actions-gh-pages@v7
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./badges
-          destination_dir: badges
-          publish_branch: gh-pages
-
-      - name: Output badge URL
+      - name: Push to gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COUNT: ${{ steps.count_tests.outputs.count }}
         run: |
-          echo "Badge JSON published at:"
-          echo "https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/badges/test-cases.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # checkout gh-pages or create if it doesn't exist
+          if git ls-remote --exit-code origin gh-pages; then
+            git fetch origin gh-pages:gh-pages
+            git checkout gh-pages
+          else
+            git checkout --orphan gh-pages
+          fi
+
+          # Remove everything (clean branch) and copy badges
+          git rm -rf . || true
+          mkdir -p badges
+          cp -r ${GITHUB_WORKSPACE}/badges/* badges/
+
+          git add badges/test-cases.json
+          git commit -m "Update test-cases badge: $COUNT" || echo "No changes to commit"
+          git push -u origin gh-pages --force
