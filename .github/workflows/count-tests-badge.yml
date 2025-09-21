@@ -12,11 +12,13 @@ jobs:
   count-and-publish:
     runs-on: ubuntu-latest
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # 2️⃣ Install stable Rust
       - name: Install Rust (stable)
         uses: actions-rs/toolchain@v1
         with:
@@ -24,16 +26,22 @@ jobs:
           override: true
           profile: minimal
 
+      # 3️⃣ Build tests (compile only)
       - name: Build tests (compile only)
         run: |
           cargo test --all --no-run || true
 
+      # 4️⃣ Count test cases
       - name: Count test cases
         id: count_tests
         run: |
-          count=$(cargo test --all -- --list 2>/dev/null | grep -E '^[[:alnum:]_].*' | grep -v '^$' | wc -l | tr -d ' ')
+          count=$(cargo test --all -- --list 2>/dev/null \
+                  | grep -E '^[[:alnum:]_].*' \
+                  | grep -v '^$' \
+                  | wc -l | tr -d ' ')
           echo "count=$count" >> $GITHUB_OUTPUT
 
+      # 5️⃣ Create badge JSON
       - name: Create badge JSON
         run: |
           mkdir -p badges
@@ -49,6 +57,7 @@ jobs:
 {"schemaVersion":1,"label":"test-cases","message":"${COUNT}","color":"${COLOR}"}
 EOF
 
+      # 6️⃣ Commit JSON to master
       - name: Commit badge to master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
