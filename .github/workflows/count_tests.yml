@@ -54,4 +54,5 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "chore: Update zipher test count badge"
-          file_pattern: 'badges/zipher-tests.svg'
+          file_pattern: 'zipher-tests.svg'
+          repository: badges
