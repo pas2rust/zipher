@@ -10,6 +10,7 @@ jobs:
   build_and_publish:
     name: Build, Test and Publish
     runs-on: ubuntu-latest
+    environment: crates-io
 
     steps:
       - name: Checkout Repository
