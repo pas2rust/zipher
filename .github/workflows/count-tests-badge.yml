@@ -1,0 +1,112 @@
+name: Count test cases & publish badge
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  count-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust (stable)
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+
+      - name: Cache cargo registry & target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build tests (compile only)
+        run: |
+          cargo test --all --no-run || true
+
+      - name: Count test cases
+        id: count_tests
+        run: |
+          set -euo pipefail
+
+          # JSON listing first
+          json_out=$(mktemp)
+          if cargo test --all -- --list --format=json 2>/dev/null | tee "${json_out}"; then
+            count=$(python3 - <<'PY'
+import sys, json
+cnt = 0
+for line in sys.stdin:
+    try:
+        obj = json.loads(line)
+    except Exception:
+        continue
+    if obj.get("type") == "test":
+        cnt += 1
+print(cnt)
+PY
+ < "${json_out}")
+          else
+            # Fallback text parsing
+            text_out=$(mktemp)
+            cargo test --all -- --list 2>/dev/null | tee "${text_out}" || true
+            count=$(grep -E '^[[:alnum:]_].*' "${text_out}" \
+                      | grep -vE '^\s*$' \
+                      | wc -l | tr -d ' ')
+            if [ "${count}" -eq "0" ]; then
+              count=$(grep -E '::' "${text_out}" | wc -l | tr -d ' ')
+            fi
+          fi
+
+          # Ensure numeric
+          if ! echo "${count}" | grep -E '^[0-9]+$' >/dev/null 2>&1; then
+            count=0
+          fi
+
+          echo "Found ${count} test cases."
+          echo "count=${count}" >> $GITHUB_OUTPUT
+
+      - name: Create badge JSON
+        run: |
+          mkdir -p badges
+          COUNT=${{ steps.count_tests.outputs.count }}
+          if [ "$COUNT" -eq "0" ]; then
+            COLOR="lightgrey"
+          elif [ "$COUNT" -lt "10" ]; then
+            COLOR="yellow"
+          else
+            COLOR="brightgreen"
+          fi
+          cat > badges/test-cases.json <<EOF
+{"schemaVersion":1,"label":"test-cases","message":"${COUNT}","color":"${COLOR}"}
+EOF
+          cat badges/test-cases.json
+
+      - name: Deploy badge to gh-pages
+        uses: peaceiris/actions-gh-pages@v7
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./badges
+          destination_dir: .
+          publish_branch: gh-pages
+
+      - name: Output badge URL
+        run: |
+          echo "Badge JSON published at:"
+          echo "https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/test-cases.json"
