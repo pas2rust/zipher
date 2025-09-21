@@ -9,6 +9,7 @@ on:
 jobs:
   update_test_count:
     runs-on: ubuntu-latest
+    environment: badges
     steps:
       - name: Checkout Zipher Repository
         uses: actions/checkout@v4
