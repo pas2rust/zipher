@@ -14,13 +14,25 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+   
+      - name: Install Additional Tools
+        run: |
+          cargo install cargo-audit --force
+          cargo install cargo-deny --force
+          cargo install cargo-nextest --force
 
-      - name: Run Tests
-        run: cargo test
+      - name: Run cargo-audit
+        run: cargo audit
+
+      - name: Run cargo-deny check
+        run: cargo deny check
+
+      - name: Run tests with cargo-nextest default features
+        run: cargo nextest run
 
       - name: Publish to Crates.io
         if: success()
