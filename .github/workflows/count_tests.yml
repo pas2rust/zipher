@@ -35,4 +35,4 @@ jobs:
 
       - name: Generate Badge and push
         run: |
-          pasops tests-badges --badge-name zipher-tests.svg --label tests --color success --logo testcafe
+          pasops tests-badges --badge-name zipher-tests.svg --label tests --color success --logo testcafe --destiny badges
