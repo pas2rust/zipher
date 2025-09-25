@@ -26,7 +26,7 @@ jobs:
         run: cargo install pasops --force
       
       - name: Checkout Badges Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: pas2rust/badges
           path: badges
