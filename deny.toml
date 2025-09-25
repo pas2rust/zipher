@@ -22,7 +22,7 @@ allow-git = []
 # to set the minimum severity level that should cause a failure.
 # Setting it to "deny" is a common practice.
 [advisories]
-severity-threshold = "warn"
+severity-threshold = "low"
 
 [bans]
 multiple-versions = "warn"
