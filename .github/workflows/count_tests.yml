@@ -35,8 +35,9 @@ jobs:
           pasops tests-badges \
             --user pas2rust \
             --token $GITHUB_TOKEN \
-            --remote origin \
+            --remote badges \
             --branch master \
+            --url https://github.com/pas2rust/badges.git \
             --badge-name zipher-tests.svg \
             --label tests \
             --color success \
