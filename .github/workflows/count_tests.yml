@@ -35,18 +35,27 @@ jobs:
 
       - name: Generate Badge
         run: |
-          cd badges
           pasops tests-badges --badge-name zipher-tests.svg --label tests --color success --logo testcafe
+          mv zipher-tests.svg badges/
 
       - name: List files in badges directory
-        run: ls -la badges/
+        run: |
+          cd badges
+          ls -la
+
+      - name: Debug - Check what was created
+        run: |
+          echo "File created?"
+          ls -la badges/zipher-tests.svg || echo "File not found 404"
+          echo "Content:"
+          cat badges/zipher-tests.svg || echo "cat file error"
 
       - name: Force Commit to Badges Repository
         run: |
           cd badges
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add zipher-tests.svg
           git commit -m "chore: Update zipher test count badge" --allow-empty
           git push
 
