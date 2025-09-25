@@ -36,6 +36,11 @@ jobs:
         run: |
           pasops tests-badges --badge-name badges/zipher-tests.svg --label tests --color success --logo testcafe
         
+      - name: Check File Path
+        run: |
+          echo "Listing all files in the current directory..."
+          ls -R
+        
       - name: Auto-Commit Badge to Badges Repository
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
