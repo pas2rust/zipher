@@ -36,6 +36,4 @@ jobs:
 
       - name: Publish to Crates.io
         if: success()
-        env:
-          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-        run: cargo publish --token $CRATES_IO_TOKEN
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}

@@ -1,4 +1,4 @@
-name: Count Tests and Generate Badge
+name: Update Tests Badge
 
 on:
   push:
@@ -8,11 +8,10 @@ on:
 
 permissions:
   contents: write
-
+  
 jobs:
-  update_test_badge:
+  create_badge:
     runs-on: ubuntu-latest
-    environment: badges
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -22,22 +21,19 @@ jobs:
         with:
           toolchain: stable
           override: true
-
+      
       - name: Install pasops CLI
         run: cargo install pasops --force
-
-      - name: Run pasops test-badges Command (create badge with count tests)
-        env:
-          BADGE_TOKEN: ${{ secrets.BADGE_TOKEN }}
+      
+      - name: Generate Badge
         run: |
-          pasops tests-badges \
-            --user pas2rust \
-            --token ${{ secrets.BADGE_TOKEN }} \
-            --remote badges \
-            --branch master \
-            --url https://github.com/pas2rust/badges.git \
-            --badge-name zipher-tests.svg \
-            --label tests \
-            --color success \
-            --logo rust
-
+          pasops tests-badges --badge-name tests.svg --label tests --color blue --logo rust
+        
+      - name: Auto-Commit Badge
+        uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: "chore: Update tests badge"
+          file_pattern: 'tests.svg'
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          token: ${{ secrets.BADGE_TOKEN }}
