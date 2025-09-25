@@ -27,7 +27,7 @@ jobs:
       
       - name: Generate Badge
         run: |
-          pasops tests-badges --badge-name tests.svg --label tests --color blue --logo rust
+          pasops tests-badges --badge-name zipher-tests.svg --label tests --color success --logo testcafe
         
       - name: Auto-Commit Badge
         uses: stefanzweifel/git-auto-commit-action@v6
