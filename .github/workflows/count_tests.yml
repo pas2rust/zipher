@@ -35,22 +35,22 @@ jobs:
 
       - name: Generate Badge
         run: |
-          pasops tests-badges --badge-name badges/zipher-tests.svg --label tests --color success --logo testcafe
+          cd badges
+          pasops tests-badges --badge-name zipher-tests.svg --label tests --color success --logo testcafe
 
       - name: List files in badges directory
         run: ls -la badges/
 
-      - name: Check status of badges repository
+      - name: Force Commit to Badges Repository
         run: |
           cd badges
-          git status
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: Update zipher test count badge" --allow-empty
+          git push
 
-      - name: Auto-Commit Badge to Badges Repository
-        uses: stefanzweifel/git-auto-commit-action@v6
-        with:
-          commit_message: "chore: Update zipher test count badge"
-          file_pattern: 'badges/zipher-tests.svg'
-          repository: badges
-          commit_user_name: github-actions[bot]
-          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
-          commit_options: '--allow-empty'
+      - name: Verify commit
+        run: |
+          cd badges
+          git log --oneline -3
