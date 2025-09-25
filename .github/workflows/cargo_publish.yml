@@ -29,11 +29,13 @@ jobs:
         run: cargo audit
 
       - name: Run cargo-deny check
-        run: cargo deny check
+        run: cargo deny check --config-path deny.toml
 
-      - name: Run tests with cargo-nextest default features
-        run: cargo nextest run
+      - name: Run tests with cargo-nextest all features
+        run: cargo nextest run --all-features
 
       - name: Publish to Crates.io
         if: success()
-        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish --token $CRATES_IO_TOKEN

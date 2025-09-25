@@ -1,3 +1,11 @@
+name: Count Tests and Generate Badge
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
 jobs:
   update_test_badge:
     runs-on: ubuntu-latest

@@ -1,0 +1,15 @@
+[licenses]
+allowed = ["MIT", "Apache-2.0", "Unlicense"]
+denied = ["GPL-3.0", "AGPL-3.0"]
+
+[bans]
+banned = []
+
+[sources]
+allowed = ["crates.io"]
+
+[advisories]
+deny-warnings = true
+
+[settings]
+deny-warnings = true
