@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: write
-  
+
 jobs:
   create_badge:
     runs-on: ubuntu-latest
@@ -22,10 +22,10 @@ jobs:
         with:
           toolchain: stable
           override: true
-      
+
       - name: Install pasops CLI
         run: cargo install pasops --force
-      
+
       - name: Checkout Badges Repository
         uses: actions/checkout@v5
         with:
@@ -36,7 +36,15 @@ jobs:
       - name: Generate Badge
         run: |
           pasops tests-badges --badge-name badges/zipher-tests.svg --label tests --color success --logo testcafe
-        
+
+      - name: List files in badges directory
+        run: ls -la badges/
+
+      - name: Check status of badges repository
+        run: |
+          cd badges
+          git status
+
       - name: Auto-Commit Badge to Badges Repository
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
