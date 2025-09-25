@@ -29,11 +29,24 @@ jobs:
         run: |
           pasops tests-badges --badge-name zipher-tests.svg --label tests --color success --logo testcafe
         
-      - name: Auto-Commit Badge
+      - name: Checkout Badges Repository
+        uses: actions/checkout@v5
+        with:
+          repository: pas2rust/badges
+          path: badges
+          token: ${{ secrets.BADGE_TOKEN }}
+
+      - name: Move Badge to Target Repository
+        run: |
+          mv zipher-tests.svg badges/
+
+      - name: Auto-Commit Badge to Badges Repository
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
-          commit_message: "chore: Update tests badge"
-          file_pattern: 'tests.svg'
+          commit_message: "chore: Update zipher test count badge"
+          file_pattern: 'zipher-tests.svg'
+          repository: badges
           commit_user_name: github-actions[bot]
           commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
-          token: ${{ secrets.BADGE_TOKEN }}
+          commit_options: '--allow-empty'
+          github-token: ${{ secrets.BADGE_TOKEN }}
