@@ -29,13 +29,6 @@ jobs:
         run: |
           pasops tests-badges --badge-name zipher-tests.svg --label tests --color success --logo testcafe
         
-      - name: Checkout Badges Repository
-        uses: actions/checkout@v5
-        with:
-          repository: pas2rust/badges
-          path: badges
-          token: ${{ secrets.BADGE_TOKEN }}
-
       - name: Move Badge to Target Repository
         run: |
           mv zipher-tests.svg badges/
