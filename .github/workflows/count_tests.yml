@@ -23,6 +23,11 @@ jobs:
       - name: Install pasops CLI
         run: cargo install pasops --force
 
+      - name: Setup Git Identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Run pasops test-badges Command (create badge with count tests)
         env:
           GITHUB_TOKEN: ${{ secrets.BADGE_TOKEN }}
