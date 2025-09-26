@@ -33,6 +33,6 @@ jobs:
           path: badges
           token: ${{ secrets.BADGE_TOKEN }}
 
-      - name: Generate Badge and push
+      - name: Generate Badge
         run: |
           pasops tests-badges --badge-name zipher-tests.svg --label tests --color success --logo testcafe --destiny badges
