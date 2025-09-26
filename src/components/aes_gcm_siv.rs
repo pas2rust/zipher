@@ -42,7 +42,6 @@ pub struct Aes {
 #[derive(Debug)]
 pub struct AesDecrypt(Vec<u8>);
 
-
 impl fmt::Display for AesDecrypt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", String::from_utf8_lossy(&self.0))

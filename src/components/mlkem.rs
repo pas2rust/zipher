@@ -57,15 +57,13 @@ impl Default for Pk {
     }
 }
 
-#[derive(M_Builder)]
-#[derive(Default)]
+#[derive(M_Builder, Default)]
 pub struct MlKem {
     pub public_key: Pk,
     pub secret_key: Sk,
     pub ciphertext: Option<String>,
     pub shared_secret: Option<String>,
 }
-
 
 impl MlKem {
     pub fn encapsulate(&mut self) -> Result<String, MlKemErr> {

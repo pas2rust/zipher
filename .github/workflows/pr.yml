@@ -1,0 +1,48 @@
+name: Publish
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build_and_publish:
+    name: Build, Check and Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Ensure rustup components
+        run: |
+          rustup component add clippy || true
+          rustup component add rustfmt || true
+
+      - name: Install tools
+        run: |
+          cargo install cargo-deny --force
+          cargo install cargo-nextest --force
+          cargo install cargo-audit --force
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      - name: Clippy (treat warnings as errors)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run tests (all features)
+        run: cargo nextest run --all-features
+
+      - name: Run cargo-deny (strict)
+        run: cargo deny check --config deny.toml
+
+      - name: Run cargo-audit (fatal here)
+        run: cargo audit
