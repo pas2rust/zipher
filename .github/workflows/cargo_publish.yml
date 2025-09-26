@@ -1,39 +1,56 @@
-name: CI/CD with Cargo Publish
+name: Publish
 
 on:
   push:
     branches:
-      - main 
+      - main
       - master
+
+permissions:
+  contents: write
 
 jobs:
   build_and_publish:
-    name: Build, Test and Publish
+    name: Build, Check and Publish
     runs-on: ubuntu-latest
-    environment: crates-io
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v5
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-   
-      - name: Install Additional Tools
+
+      - name: Ensure rustup components
         run: |
-          cargo install cargo-audit --force
+          rustup component add clippy || true
+          rustup component add rustfmt || true
+
+      - name: Install tools
+        run: |
           cargo install cargo-deny --force
           cargo install cargo-nextest --force
+          cargo install cargo-audit --force
 
-      - name: Run cargo-audit
-        run: cargo audit
+      - name: Check formatting
+        run: cargo fmt -- --check
 
-      - name: Run cargo-deny check
-        run: cargo deny check --config deny.toml
+      - name: Clippy (treat warnings as errors)
+        run: cargo clippy --all-targets -- -D warnings
 
-      - name: Run tests with cargo-nextest all features
+      - name: Run tests (all features)
         run: cargo nextest run --all-features
 
-      - name: Publish to Crates.io
-        if: success()
-        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+      - name: Run cargo-deny (strict)
+        run: cargo deny check --config deny.toml
+
+      - name: Run cargo-audit (fatal here)
+        run: cargo audit
+
+      - name: Validate package (dry-run)
+        run: cargo publish --dry-run
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish --token "$CARGO_REGISTRY_TOKEN"
