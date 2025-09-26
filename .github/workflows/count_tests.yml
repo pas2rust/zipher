@@ -35,4 +35,12 @@ jobs:
 
       - name: Generate Badge
         run: |
-          pasops tests-badges --badge-name zipher-tests1.svg --label tests --color success --logo testcafe --destiny badges
+          pasops tests-badges \
+            --user pas2rust \
+            --badge-name zipher-tests.svg \
+            --label tests \
+            --color success \
+            --logo testcafe \
+            --logo-color white \
+            --destiny badges 
+
