@@ -24,7 +24,7 @@ fn jwt_expired_token() {
 
     let result = jwt.decode();
 
-    assert!(result.is_err(), "{:#?}", result);
+    assert!(result.is_err(), "{result:#?}");
 
     if let Err(err) = result {
         assert_eq!(err.kind, JwtError::DecodingError);

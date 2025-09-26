@@ -52,7 +52,7 @@ pub struct Argon {
 impl Argon {
     pub fn encrypt(&mut self) -> Result<String, ArgonErr> {
         let ctx = Argon2::new_with_secret(
-            &self.secret.as_bytes(),
+            self.secret.as_bytes(),
             self.algorithm,
             self.version,
             self.params.clone(),
@@ -62,7 +62,7 @@ impl Argon {
         let base_64 = SaltString::encode_b64(&self.salt)
             .map_err(argon_err(ArgonError::SaltEncodeFailed, 2))?;
 
-        match ctx.hash_password(&self.password.as_bytes(), base_64.as_salt()) {
+        match ctx.hash_password(self.password.as_bytes(), base_64.as_salt()) {
             Ok(password_hash) => {
                 let hash = password_hash.serialize().to_string();
                 self.hash(&hash);
@@ -74,7 +74,7 @@ impl Argon {
 
     pub fn verify(&self) -> Result<(), ArgonErr> {
         let ctx = Argon2::new_with_secret(
-            &self.secret.as_bytes(),
+            self.secret.as_bytes(),
             self.algorithm,
             self.version,
             self.params.clone(),
@@ -84,7 +84,7 @@ impl Argon {
         let password_hash =
             PasswordHash::new(&self.hash).map_err(argon_err(ArgonError::InvalidHash, 4))?;
 
-        ctx.verify_password(&self.password.as_bytes(), &password_hash)
+        ctx.verify_password(self.password.as_bytes(), &password_hash)
             .map_err(argon_err(ArgonError::VerifyFailed, 5))
     }
 }

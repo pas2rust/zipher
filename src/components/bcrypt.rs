@@ -33,9 +33,8 @@ pub struct Bcrypt {
 impl Bcrypt {
     pub fn encrypt(&mut self) -> Result<String, BcryptErr> {
         hash(&self.password, self.cost)
-            .map(|hash| {
-                self.hash(&hash);
-                hash
+            .inspect(|hash| {
+                self.hash(hash);
             })
             .map_err(bcrypt_err(BcryptError::HashFailed, 1))
     }

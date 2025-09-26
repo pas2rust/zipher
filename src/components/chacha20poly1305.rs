@@ -1,3 +1,5 @@
+use std::fmt;
+
 use chacha20poly1305::{
     ChaCha20Poly1305, KeyInit,
     aead::{Aead, generic_array::GenericArray},
@@ -30,12 +32,11 @@ pub type ChaChaErr = Error<ChaChaError>;
 #[derive(Debug)]
 pub struct ChaChaDecrypt(Vec<u8>);
 
-impl ChaChaDecrypt {
-    pub fn to_string(&self) -> String {
-        String::from_utf8_lossy(&self.0).into_owned()
+impl fmt::Display for ChaChaDecrypt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", String::from_utf8_lossy(&self.0))
     }
 }
-
 #[derive(Debug, M_Builder)]
 pub struct ChaCha {
     #[set(value = rand::rng().random::<ChaChaKey>())]

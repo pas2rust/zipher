@@ -31,33 +31,34 @@ pub struct Sk(pub SecretKey);
 #[derive(Clone)]
 pub struct Pk(pub PublicKey);
 
-static KEYPAIR: LazyLock<(PublicKey, SecretKey)> = LazyLock::new(|| keypair());
+static KEYPAIR: LazyLock<(PublicKey, SecretKey)> = LazyLock::new(keypair);
 
 impl Sk {
     pub fn get(&self) -> SecretKey {
-        self.0.clone()
+        self.0
     }
 }
 
 impl Pk {
     pub fn get(&self) -> PublicKey {
-        self.0.clone()
+        self.0
     }
 }
 
 impl Default for Sk {
     fn default() -> Self {
-        Self(KEYPAIR.1.clone())
+        Self(KEYPAIR.1)
     }
 }
 
 impl Default for Pk {
     fn default() -> Self {
-        Self(KEYPAIR.0.clone())
+        Self(KEYPAIR.0)
     }
 }
 
 #[derive(M_Builder)]
+#[derive(Default)]
 pub struct MlKem {
     pub public_key: Pk,
     pub secret_key: Sk,
@@ -65,16 +66,6 @@ pub struct MlKem {
     pub shared_secret: Option<String>,
 }
 
-impl Default for MlKem {
-    fn default() -> Self {
-        Self {
-            public_key: Default::default(),
-            secret_key: Default::default(),
-            ciphertext: None,
-            shared_secret: None,
-        }
-    }
-}
 
 impl MlKem {
     pub fn encapsulate(&mut self) -> Result<String, MlKemErr> {

@@ -39,7 +39,7 @@ fn jwt_err<T: ToString>(kind: JwtError, code: u8) -> impl FnOnce(T) -> JwtErr {
     }
 }
 
-fn switch(key: &Vec<u8>, algorithm: Algorithm) -> Result<Vec<u8>, JwtErr> {
+fn switch(key: &[u8], algorithm: Algorithm) -> Result<Vec<u8>, JwtErr> {
     let size = match algorithm {
         Algorithm::HS256 => 32,
         Algorithm::HS384 => 48,

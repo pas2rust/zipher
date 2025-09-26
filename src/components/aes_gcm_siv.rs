@@ -1,3 +1,5 @@
+use std::fmt::{self, Debug};
+
 use aes_gcm_siv::{
     Aes256GcmSiv, KeyInit,
     aead::{Aead, generic_array::GenericArray},
@@ -40,9 +42,10 @@ pub struct Aes {
 #[derive(Debug)]
 pub struct AesDecrypt(Vec<u8>);
 
-impl AesDecrypt {
-    pub fn to_string(&self) -> String {
-        String::from_utf8_lossy(&self.0).into_owned()
+
+impl fmt::Display for AesDecrypt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", String::from_utf8_lossy(&self.0))
     }
 }
 

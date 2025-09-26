@@ -30,7 +30,7 @@ pub struct Sk(pub SecretKey);
 #[derive(Clone)]
 pub struct Pk(pub PublicKey);
 
-static KEYPAIR: LazyLock<(PublicKey, SecretKey)> = LazyLock::new(|| keypair());
+static KEYPAIR: LazyLock<(PublicKey, SecretKey)> = LazyLock::new(keypair);
 
 impl Pk {
     pub fn get(&self) -> PublicKey {
@@ -47,14 +47,14 @@ impl Sk {
 impl Default for Pk {
     fn default() -> Self {
         let pk = &KEYPAIR.0;
-        Self(pk.clone())
+        Self(*pk)
     }
 }
 
 impl Default for Sk {
     fn default() -> Self {
         let sk = &KEYPAIR.1;
-        Self(sk.clone())
+        Self(*sk)
     }
 }
 
