@@ -18,9 +18,6 @@ deny = [
 allow-registry = ["crates.io"]
 allow-git = []
 
-# This section now correctly uses the 'severity-threshold' key
-# to set the minimum severity level that should cause a failure.
-# Setting it to "deny" is a common practice.
 [advisories]
 severity-threshold = "low"
 
