@@ -1,26 +1,46 @@
 [licenses]
+unused-allowed-license = "warn"
+confidence-threshold = 0.95
 allow = [
     "MIT",
     "Apache-2.0",
-    "BSD-2-Clause",
-    "BSD-3-Clause",
-    "ISC",
-    "Zlib"
+    "MIT OR Apache-2.0",
 ]
-deny = [
-    "GPL-3.0",
-    "AGPL-3.0",
-    "LGPL-3.0",
-    "Unlicense",
+
+[licenses.private]
+ignore = true
+registries = ["sekrets"]
+
+[[licenses.exceptions]]
+allow = ["Zlib"]
+name = "adler32"
+version = "0.1.1"
+[[licenses.clarify]]
+name = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [
+    { path = "LICENSE", hash = 0xbd0eed23 }
 ]
+
 
 [sources]
-allow-registry = ["crates.io"]
+unknown-registry = "allow"
+unknown-git = "deny"
+required-git-spec = "tag"
+allow-registry = ["https://crates.io"]
 allow-git = []
+unused-allowed-source = "warn"
+[sources.allow-org]
+github = []
+gitlab = []
+bitbucket = []
 
 [advisories]
-severity-threshold = "low"
-
-[bans]
-multiple-versions = "warn"
-wildcards = "deny"
+db-path = "~/.cargo/advisory-dbs"
+db-urls = ["https://github.com/RustSec/advisory-db"]
+ignore = [
+    "RUSTSEC-0000-0000",
+    "crate@0.1",
+    { crate = "yanked", reason = "a new version has not been released" },
+]
+unmaintained = "workspace"
