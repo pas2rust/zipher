@@ -574,9 +574,9 @@ dependencies = [
 
 [[package]]
 name = "pqcrypto-mldsa"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bd3ecb90717f6bda0ad327703be9e899cdfa88f7ce05563bfd7016f8742bad6"
+checksum = "f9f812cd126a2582599478a434fea75937b4b05d234c64a49e0cea129e130528"
 dependencies = [
  "cc",
  "glob",
@@ -1116,7 +1116,7 @@ checksum = "ced3678a2879b30306d323f4542626697a464a97c0a07c9aebf7ebca65cd4dde"
 
 [[package]]
 name = "zipher"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "aes-gcm-siv",
  "argon2",

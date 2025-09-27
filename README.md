@@ -343,7 +343,26 @@ fn main() -> Result<(), MlKemErr> {
 - The shared secrets match, allowing Alice and Bob to securely share a secret over an insecure channel.
 - This flow uses Kyber ML-KEM 1024, a quantum-resistant cryptographic scheme designed to protect against quantum attacks.
 
-# ❤️ Donate
+---
 
-[![Monero](https://img.shields.io/badge/88NKLkhZf1nTVpaSU6vwG6dwBwb9tFVSM8Lpj3YqdL1PMt8Gm7opV7aUnMYBaAC9Y6a4kfDc3fLGoMVqeSJKNphyLpLdEvC-FF6600?style=flat&logo=monero&logoColor=white)](https://github.com/pas2rust/pas2rust/blob/main/pas-monero-donate.png)
-[![Bitcoin](https://img.shields.io/badge/bc1qnlayyh84e9u5pd4m9g9sf4c5zdzswvkmudmdu5-EAB300?style=flat&logo=bitcoin&logoColor=white)](https://github.com/pas2rust/pas2rust/blob/main/pas-bitcoin-donate.png)
+<h2 align="center">
+  <strong>❤️ Donate</strong>
+</h2>
+
+<p align="center">
+  <a href="https://github.com/pas2rust/pas2rust/blob/main/pas-monero-donate.png" style="text-decoration:none; color:inherit;">
+    <img src="https://img.shields.io/badge/Monero%20QR-FF6600?style=flat&logo=monero&logoColor=white" alt="Monero QR"/>
+  </a>
+  <a href="https://github.com/pas2rust/pas2rust/blob/main/pas-bitcoin-donate.png" style="text-decoration:none; color:inherit;">
+    <img src="https://img.shields.io/badge/BTC%20QR-EAB300?style=flat&logo=bitcoin&logoColor=white" alt="BTC QR"/>
+  </a>
+  <a href="https://revolut.me/pas2rust" style="text-decoration:none; color:inherit;">
+    <img src="https://img.shields.io/badge/Revolut%20QR-Blue?style=flat&logo=revolut&logoColor=white" alt="Revolut QR"/>
+  </a>
+  <a href="https://wise.com/pay/me/pedroaugustos99" style="text-decoration:none; color:inherit;">
+    <img src="https://img.shields.io/badge/Wise%20QR-1CA0F2?style=flat&logo=wise&logoColor=white" alt="Wise QR"/>
+  </a>
+</p>
+
+
+---
