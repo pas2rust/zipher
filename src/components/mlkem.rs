@@ -1,9 +1,8 @@
 use hex;
-use kenzu::M_Builder;
-use mokuya::components::error::Error;
+use kenzu::Builder;
 use pqcrypto_mlkem::mlkem1024::*;
-use pqcrypto_traits::kem::{Ciphertext, SharedSecret};
-use std::sync::LazyLock;
+use pqcrypto_traits::kem::{Ciphertext, PublicKey, SecretKey, SharedSecret};
+use std::{error::Error as StdError, fmt};
 
 #[derive(Debug, PartialEq, Default)]
 pub enum MlKemError {
@@ -13,76 +12,78 @@ pub enum MlKemError {
     DecapsulationFailed,
     HexEncodingFailed,
     HexDecodingFailed,
+    Other(String),
 }
 
-pub type MlKemErr = Error<MlKemError>;
-
-fn mlkem_err<T: ToString>(kind: MlKemError, code: u8) -> impl FnOnce(T) -> MlKemErr {
-    move |err: T| {
-        let mut error = MlKemErr::new();
-        error.description(err.to_string()).kind(kind).code(code);
-        error
+impl fmt::Display for MlKemError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MlKemError::KeyGenerationFailed => write!(f, "key generation failed"),
+            MlKemError::EncapsulationFailed => write!(f, "encapsulation failed"),
+            MlKemError::DecapsulationFailed => write!(f, "decapsulation failed"),
+            MlKemError::HexEncodingFailed => write!(f, "hex encoding failed"),
+            MlKemError::HexDecodingFailed => write!(f, "hex decoding failed"),
+            MlKemError::Other(s) => write!(f, "other: {}", s),
+        }
     }
 }
 
-#[derive(Clone)]
-pub struct Sk(pub SecretKey);
-
-#[derive(Clone)]
-pub struct Pk(pub PublicKey);
-
-static KEYPAIR: LazyLock<(PublicKey, SecretKey)> = LazyLock::new(keypair);
-
-impl Sk {
-    pub fn get(&self) -> SecretKey {
-        self.0
+impl StdError for MlKemError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        None
     }
 }
 
-impl Pk {
-    pub fn get(&self) -> PublicKey {
-        self.0
+impl From<hex::FromHexError> for MlKemError {
+    fn from(_: hex::FromHexError) -> Self {
+        MlKemError::HexDecodingFailed
+    }
+}
+impl From<String> for MlKemError {
+    fn from(s: String) -> Self {
+        MlKemError::Other(s)
+    }
+}
+impl From<&str> for MlKemError {
+    fn from(s: &str) -> Self {
+        MlKemError::Other(s.to_string())
     }
 }
 
-impl Default for Sk {
-    fn default() -> Self {
-        Self(KEYPAIR.1)
-    }
+pub type MlKemErr = MlKemError;
+pub type MlKemPublicKeyType = Vec<u8>;
+pub type MlKemSecretKeyType = Vec<u8>;
+
+fn keys() -> (MlKemPublicKeyType, MlKemSecretKeyType) {
+    let (pk, sk) = keypair();
+    (pk.as_bytes().to_vec(), sk.as_bytes().to_vec())
 }
 
-impl Default for Pk {
-    fn default() -> Self {
-        Self(KEYPAIR.0)
-    }
-}
-
-#[derive(M_Builder, Default)]
+#[derive(Builder)]
 pub struct MlKem {
-    pub public_key: Pk,
-    pub secret_key: Sk,
+    #[opt(default = keys())]
+    pub pk_and_sk: (MlKemPublicKeyType, MlKemSecretKeyType),
     pub ciphertext: Option<String>,
     pub shared_secret: Option<String>,
 }
 
 impl MlKem {
     pub fn encapsulate(&mut self) -> Result<String, MlKemErr> {
-        let (shared_secret, ciphertext) = encapsulate(&self.public_key.get());
-        let ciphertext_hex = hex::encode(ciphertext.as_bytes());
-        let shared_secret_hex = hex::encode(shared_secret.as_bytes());
-        self.ciphertext = Some(ciphertext_hex.clone());
-        self.shared_secret = Some(shared_secret_hex.clone());
-        Ok(ciphertext_hex)
+        let (pk, _) = &self.pk_and_sk;
+        let pk = PublicKey::from_bytes(pk).map_err(|_| MlKemError::KeyGenerationFailed)?;
+        let (shared_secret, ciphertext) = encapsulate(&pk);
+        self.ciphertext = Some(hex::encode(ciphertext.as_bytes()));
+        self.shared_secret = Some(hex::encode(shared_secret.as_bytes()));
+        Ok(self.ciphertext.clone().unwrap())
     }
 
     pub fn decapsulate(&mut self, ciphertext_hex: &str) -> Result<String, MlKemErr> {
-        let ciphertext_bytes =
-            hex::decode(ciphertext_hex).map_err(mlkem_err(MlKemError::HexDecodingFailed, 1))?;
-
+        let (_, sk) = &self.pk_and_sk;
+        let sk = SecretKey::from_bytes(sk).map_err(|_| MlKemError::KeyGenerationFailed)?;
+        let ciphertext_bytes = hex::decode(ciphertext_hex)?;
         let ciphertext = Ciphertext::from_bytes(&ciphertext_bytes)
-            .map_err(mlkem_err(MlKemError::DecapsulationFailed, 2))?;
-
-        let shared_secret = decapsulate(&ciphertext, &self.secret_key.get());
+            .map_err(|_| MlKemError::DecapsulationFailed)?;
+        let shared_secret = decapsulate(&ciphertext, &sk);
         let shared_secret_hex = hex::encode(shared_secret.as_bytes());
         self.shared_secret = Some(shared_secret_hex.clone());
         Ok(shared_secret_hex)

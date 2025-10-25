@@ -11,7 +11,7 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/pas2rust/zipher?color=ff69b4&label=update&logo=git&style=flat&logoColor=white)
 
 
-**`zipher`** is a comprehensive cryptography toolkit for Rust, providing modern encryption, password hashing, post-quantum algorithms, and JWT support in a unified API. Designed for security and ease of use.
+**`zipher`** is a comprehensive cryptography toolkit for Rust, providing modern encryption, password hashing, post-quantum algorithms, support in a unified API. Designed for security and ease of use.
 
 ---
 
@@ -29,11 +29,6 @@
 - **ML-KEM** (Module Lattice-based Key Encapsulation Mechanism)
 - **ML-DSA** (Module Lattice-based Digital Signature Algorithm)
 
-### 🪙 JWT Support
-- Complete JWT implementation with signing/verification
-- HS256/HS384/HS512 support
-- Support for other algorithms (e.g., RS256, ES256) is currently under development.
-
 ### 🛡️ Security Features
 - Type-safe API design
 - Sensitive data zeroization
@@ -46,7 +41,7 @@
 Enable only the features you need:
 
 ```bash
-cargo add zipher --features aes,chacha20,argon2,bcrypt,jwt,pqkem,pqdsa,postquantum
+cargo add zipher --features aes,chacha20,argon2,bcrypt,pqkem,pqdsa,postquantum
 ```
 
 
@@ -58,26 +53,68 @@ This example demonstrates how to use the AES-GCM-SIV authenticated encryption mo
 The AES-GCM-SIV mode provides nonce misuse resistance, meaning it is safer even if nonces are accidentally reused.
 
 ```rust
-use zipher::components::aes_gcm_siv::{Aes, AesErr};
+use zipher::components::aes_gcm_siv::{AesError, AesGcmSiv, AesGcmSivTarget};
 
-fn main() -> Result<(), AesErr> {
-    // Create a new AES encryptor with a random key and nonce
-    let mut aes = Aes::new();
+#[test]
+fn encrypt_decrypt() -> Result<(), AesError> {
+    let mut aes = AesGcmSiv::new();
+    let encrypt = aes.mut_target(AesGcmSivTarget::new("test")?).encrypt()?;
+    let decrypt = aes.decrypt()?.to_string();
 
-    // Set the plaintext you want to encrypt
-    aes.target("Hello, AES-GCM-SIV!");
-
-    // Encrypt the data
-    let ciphertext = aes.encrypt()?;
-    println!("Encrypted (hex): {}", ciphertext);
-
-    // Decrypt the ciphertext back to plaintext
-    let decrypted = aes.decrypt()?.to_string();
-    println!("Decrypted text: {}", decrypted);
-
-    assert_eq!(decrypted, "Hello, AES-GCM-SIV!");
+    assert_eq!(decrypt, "test");
+    assert_ne!(encrypt, "test");
     Ok(())
 }
+
+#[test]
+fn decrypt_without_encrypt() {
+    let aes = AesGcmSiv::new();
+    let result = aes.decrypt();
+    assert!(
+        result.is_err(),
+        "Decryption should fail if no encrypted data exists"
+    );
+}
+
+#[test]
+fn encrypt_decrypt_large_data() -> Result<(), AesError> {
+    let mut aes = AesGcmSiv::new();
+    let large_text = "A".repeat(10_000);
+
+    aes.mut_target(AesGcmSivTarget::new(large_text.clone())?)
+        .encrypt()?;
+    let decrypt = aes.decrypt()?.to_string();
+
+    assert_eq!(decrypt, large_text);
+    Ok(())
+}
+
+#[test]
+fn reencrypt_overwrites_previous() -> Result<(), AesError> {
+    let mut aes = AesGcmSiv::new();
+    let first_cipher = aes.mut_target(AesGcmSivTarget::new("first")?).encrypt()?;
+    let second_cipher = aes.mut_target(AesGcmSivTarget::new("second")?).encrypt()?;
+    let decrypted = aes.decrypt()?.to_string();
+    assert_eq!(decrypted, "second");
+    assert_ne!(first_cipher, second_cipher);
+
+    Ok(())
+}
+
+#[test]
+fn encrypt_decrypt_unicode() -> Result<(), AesError> {
+    let mut aes = AesGcmSiv::new();
+    let text = "Hellow, world! 🐱🔒 こんにちは";
+
+    let cipher = aes.mut_target(AesGcmSivTarget::new(text)?).encrypt()?;
+    let decrypted = aes.decrypt()?.to_string();
+
+    assert_eq!(decrypted, text);
+    assert_ne!(cipher, text);
+
+    Ok(())
+}
+
 ```
 
 ### 🤔 Explanation
@@ -97,26 +134,45 @@ This example demonstrates how to use the ChaCha20-Poly1305 authenticated encrypt
 ChaCha20-Poly1305 is a fast and secure AEAD cipher suitable for many applications.
 
 ```rust
-use zipher::components::chacha20poly1305::{ChaCha, ChaChaErr};
+use zipher::components::chacha20poly1305::{ChaCha, ChaChaError, ChaChaTarget};
 
-fn main() -> Result<(), ChaChaErr> {
-    // Create a new ChaCha20-Poly1305 encryptor with a random key and nonce
+#[test]
+fn encrypt_decrypt() -> Result<(), ChaChaError> {
     let mut chacha = ChaCha::new();
+    chacha.mut_target(ChaChaTarget::new("test")?).encrypt()?;
+    let decrypt = chacha.decrypt()?.to_string();
 
-    // Set the plaintext you want to encrypt
-    chacha.target("Hello, ChaCha20-Poly1305!");
-
-    // Encrypt the data
-    let ciphertext = chacha.encrypt()?;
-    println!("Encrypted (hex): {}", ciphertext);
-
-    // Decrypt the ciphertext back to plaintext
-    let decrypted = chacha.decrypt()?.to_string();
-    println!("Decrypted text: {}", decrypted);
-
-    assert_eq!(decrypted, "Hello, ChaCha20-Poly1305!");
+    assert_eq!(decrypt, "test");
     Ok(())
 }
+
+#[test]
+fn decrypt_without_encrypt() -> Result<(), ChaChaError> {
+    let chacha = ChaCha::new();
+    let result = chacha.decrypt();
+
+    assert!(
+        result.is_err(),
+        "Decryption should fail if no encrypted data exists"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn encrypt_decrypt_large_data() -> Result<(), ChaChaError> {
+    let mut chacha = ChaCha::new();
+    let large_text = "A".repeat(10_000);
+
+    chacha
+        .mut_target(ChaChaTarget::new(large_text.clone())?)
+        .encrypt()?;
+    let decrypt = chacha.decrypt()?.to_string();
+
+    assert_eq!(decrypt, large_text);
+    Ok(())
+}
+
 ```
 ### 🤔 Explanation
 
@@ -129,68 +185,65 @@ fn main() -> Result<(), ChaChaErr> {
 -  If encryption or decryption fails, detailed Err kinds are returned.
 -  Additionally, the key and nonce fields can be explicitly set to use your own cryptographic key and nonce instead of the randomly generated ones. This allows full control over encryption parameters when needed.
 
-### 🪙 JWT Encoding and Decoding Example
-
-This example demonstrates how to create, encode, and decode a JSON Web Token (JWT) using HMAC SHA algorithms (HS256, HS384, HS512). It includes claim setting and token expiration handling.
-
-```rust
-use zipher::components::jwt::{Jwt, JwtErr, Claims};
-
-fn main() -> Result<(), JwtErr> {
-    // Create a new JWT instance with a random key and default HS256 algorithm
-    let mut jwt = Jwt::new();
-
-    // Create claims: subject ("sub") and expiration time ("exp" in seconds)
-    let mut claims = Claims::new();
-    claims.sub("user123".to_string()).exp::<usize>(3600);
-
-    // Assign claims to JWT and encode (sign) it
-    jwt.claims(claims);
-    let token = jwt.encode()?;
-    println!("Encoded JWT: {}", token);
-
-    // Decode (verify) the token and retrieve claims
-    let decoded_claims = jwt.decode()?;
-    println!("Decoded subject: {}", decoded_claims.sub);
-
-    assert_eq!(decoded_claims.sub, "user123");
-    Ok(())
-}
-```
-### 🤔 Explanation
-
--  Jwt::new() creates a JWT object with a randomly generated secret key.
--  Claims represent the payload data, requiring a non-empty subject (sub) and expiration time (exp).
--  .encode() signs the token using the secret key and chosen HMAC SHA algorithm (default is HS256).
--  .decode() verifies and decodes the token, validating expiration and signature.
--  Supported algorithms: HS256, HS384, HS512 (others are not supported yet).
--  Expiration (exp) is calculated as the current UTC time plus the specified duration in seconds.
--  Errs are returned with detailed kinds if encoding or decoding fails.
-
 ### 🔑 Argon2 Password Hashing Example
 
 This example demonstrates how to securely hash and verify passwords using Argon2id with customizable parameters and secret-based key hardening.
 
 ```rust
-use zipher::components::argon2::{Argon, ArgonErr};
+use zipher::components::argon2::{Argon, ArgonError, ArgonPassword};
 
-fn main() -> Result<(), ArgonErr> {
-    // Create a new Argon2 hasher with random salt and secret
-    let mut argon = Argon::new();
+#[test]
+fn encrypt_verify() -> Result<(), ArgonError> {
+    let mut argon = Argon::new().password(ArgonPassword::new(
+        "1234567890123456789012345678901234567890",
+    )?);
+    argon.encrypt()?;
 
-    // Set the password to hash
-    argon.password("super_secure_password");
-
-    // Generate the Argon2 hash
-    let hash = argon.encrypt()?;
-    println!("Password hash: {}", hash);
-
-    // Verify the password against the stored hash
-    argon.verify()?;
-    println!("Password verified successfully!");
+    assert!(
+        argon.verify().is_ok(),
+        "Password verification should succeed"
+    );
 
     Ok(())
 }
+
+#[test]
+fn encrypt_different_passwords() -> Result<(), ArgonError> {
+    let argon1 = Argon::new();
+    let hash1 = argon1
+        .password(ArgonPassword::new("password123")?)
+        .encrypt()?;
+
+    let argon2 = Argon::new();
+    let hash2 = argon2
+        .password(ArgonPassword::new("different_password")?)
+        .encrypt()?;
+
+    assert_ne!(
+        hash1, hash2,
+        "Hashes for different passwords should not be equal"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn verify_wrong_password() -> Result<(), ArgonError> {
+    let mut argon = Argon::new().password(ArgonPassword::new("correct_password")?);
+    argon.encrypt()?;
+
+    let res = argon
+        .password(ArgonPassword::new("wrong_password")?)
+        .verify();
+
+    assert!(
+        res.is_err(),
+        "Verification should fail for incorrect password"
+    );
+
+    Ok(())
+}
+
 ```
 ### 🤔 Explanation
 - Argon::new() creates a struct with:
@@ -211,26 +264,64 @@ fn main() -> Result<(), ArgonErr> {
 This example shows how to securely hash and verify passwords using the Bcrypt algorithm.
 Bcrypt is a widely used password hashing function that is intentionally slow to resist brute-force attacks.
 
-```rs
-use zipher::components::bcrypt::{Bcrypt, BcryptErr};
+```rust
+use zipher::components::bcrypt::{Bcrypt, BcryptError, BcryptPassword};
 
-fn main() -> Result<(), BcryptErr> {
-    // Create a new Bcrypt instance with default cost
+#[test]
+fn encrypt_verify() -> Result<(), BcryptError> {
     let mut bcrypt = Bcrypt::new();
+    bcrypt
+        .mut_password(BcryptPassword::new(
+            "1234567890123456789012345678901234567890",
+        )?)
+        .encrypt()?;
 
-    // Set the password to be hashed
-    bcrypt.password("my_secure_password");
-
-    // Hash the password
-    let hash = bcrypt.encrypt()?;
-    println!("Bcrypt Hash: {}", hash);
-
-    // Verify the hashed password
-    let result = bcrypt.verify();
-    println!("Password verified: {}", result.is_ok());
+    assert!(
+        bcrypt.verify().is_ok(),
+        "Password verification should succeed"
+    );
 
     Ok(())
 }
+
+#[test]
+fn encrypt_different_passwords() -> Result<(), BcryptError> {
+    let bcrypt1 = Bcrypt::new();
+    let hash1 = bcrypt1
+        .password(BcryptPassword::new("password123")?)
+        .encrypt()?;
+
+    let bcrypt2 = Bcrypt::new();
+    let hash2 = bcrypt2
+        .password(BcryptPassword::new("different_password")?)
+        .encrypt()?;
+
+    assert_ne!(
+        hash1, hash2,
+        "Hashes for different passwords should not be equal"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn verify_wrong_password() -> Result<(), BcryptError> {
+    let mut bcrypt = Bcrypt::new();
+    bcrypt
+        .mut_password(BcryptPassword::new("correct_password")?)
+        .encrypt()?;
+
+    bcrypt.mut_password(BcryptPassword::new("wrong_password")?);
+    let res = bcrypt.verify();
+
+    assert!(
+        res.is_err(),
+        "Verification should fail for incorrect password"
+    );
+
+    Ok(())
+}
+
 ```
 
 ### 🤔 Explanation
@@ -248,35 +339,114 @@ MLDSA is a post-quantum digital signature scheme. This module supports both embe
 ```rs
 use zipher::components::mldsa::{MlDsa, MlDsaErr};
 
-fn main() -> Result<(), MlDsaErr> {
-    // Create a new MLDSA instance with a keypair
+#[test]
+fn sign_and_verify_embedded_message_successfully() -> Result<(), MlDsaError> {
     let mldsa = MlDsa::new();
+    let message = b"Test message for embedded signature.";
 
-    // Message to sign
-    let message = b"Post-quantum secure message";
+    let signed_hex = mldsa.sign(message)?;
+    let verified_message = mldsa.verify(&signed_hex)?;
 
-    // Sign the message (embedded signature)
-    let signed = mldsa.sign(message)?;
-    println!("Signed message (hex): {}", signed);
-
-    // Verify and recover the message
-    let verified = mldsa.verify(&signed)?;
-    println!("Recovered: {}", String::from_utf8_lossy(&verified));
+    assert_eq!(
+        message.to_vec(),
+        verified_message,
+        "The verified message should match the original"
+    );
 
     Ok(())
 }
+
+#[test]
+fn sign_and_verify_detached_signature_successfully() -> Result<(), MlDsaError> {
+    let mldsa = MlDsa::new();
+    let message = b"Test message for detached signature.";
+
+    let signature_hex = mldsa.sign_detached(message)?;
+    mldsa.verify_detached(message, &signature_hex)?;
+
+    Ok(())
+}
+
+#[test]
+fn verify_invalid_embedded_signature_should_fail() {
+    let mldsa = MlDsa::new();
+    let invalid_signed_hex = "00";
+
+    let result = mldsa.verify(invalid_signed_hex);
+
+    assert!(
+        result.is_err(),
+        "Verification should fail for an invalid embedded signature"
+    );
+}
+
+#[test]
+fn verify_invalid_detached_signature_should_fail() {
+    let mldsa = MlDsa::new();
+    let message = b"Test message for invalid detached signature.";
+    let invalid_signature_hex = "00";
+
+    let result = mldsa.verify_detached(message, invalid_signature_hex);
+
+    assert!(
+        result.is_err(),
+        "Verification should fail for an invalid detached signature"
+    );
+}
+
+#[test]
+fn sign_and_verify_with_cloned_instance() -> Result<(), MlDsaError> {
+    let mldsa_sender = MlDsa::new();
+
+    let mldsa_receiver = MlDsa {
+        pk_and_sk: mldsa_sender.pk_and_sk.clone(),
+    };
+
+    let message = b"Test message for cloned instances.";
+
+    let signed_hex = mldsa_sender.sign(message)?;
+    let verified_message = mldsa_receiver.verify(&signed_hex)?;
+
+    assert_eq!(
+        message.to_vec(),
+        verified_message,
+        "The verified message should match the original"
+    );
+
+    Ok(())
+}
+
 ```
 ### ✂️ Detached Signature
 
 ```rs
-let mldsa = MlDsa::new();
-let message = b"Detached example";
+#[test]
+fn sign_and_verify_embedded_message_successfully() -> Result<(), MlDsaError> {
+    let mldsa = MlDsa::new();
+    let message = b"Test message for embedded signature.";
 
-// Sign the message
-let signature = mldsa.sign_detached(message)?;
+    let signed_hex = mldsa.sign(message)?;
+    let verified_message = mldsa.verify(&signed_hex)?;
 
-// Verify signature
-mldsa.verify_detached(message, &signature)?;
+    assert_eq!(
+        message.to_vec(),
+        verified_message,
+        "The verified message should match the original"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn sign_and_verify_detached_signature_successfully() -> Result<(), MlDsaError> {
+    let mldsa = MlDsa::new();
+    let message = b"Test message for detached signature.";
+
+    let signature_hex = mldsa.sign_detached(message)?;
+    mldsa.verify_detached(message, &signature_hex)?;
+
+    Ok(())
+}
 ```
 
 ### 🤔 Explanation
@@ -299,33 +469,57 @@ This example demonstrates a key exchange using the post-quantum Kyber ML-KEM alg
 Two parties—Alice and Bob—securely derive a shared secret using public-key encapsulation.
 
 ```rust
-use zipher::pqcrypto_mlkem::mlkem1024_keypair;
-use zipher::components::mlkem::{MlKem, MlKemErr, Pk, Sk};
+use pqcrypto_mlkem::mlkem1024::keypair as mlkem1024_keypair;
+use zipher::components::mlkem::MlKemPkAndSk;
+use zipher::components::mlkem::{MlKem, MlKemErr};
+use zipher::pqcrypto_traits::kem::PublicKey;
+use zipher::pqcrypto_traits::kem::SecretKey;
 
-fn main() -> Result<(), MlKemErr> {
-    // Bob generates a fresh post-quantum keypair (public and secret keys)
+#[test]
+fn encapsulate_and_decapsulate_successfully() -> Result<(), MlKemErr> {
+    let mut kem = MlKem::new();
+    let ciphertext = kem.encapsulate()?;
+    let shared_decapsulated = kem.decapsulate(&ciphertext)?;
+
+    let shared_original = kem.shared_secret.expect("shared secret missing");
+
+    assert_eq!(
+        shared_original, shared_decapsulated,
+        "Shared secrets must match"
+    );
+    assert_ne!(
+        ciphertext, shared_decapsulated,
+        "Ciphertext should differ from shared secret"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn decapsulate_invalid_ciphertext_should_fail() {
+    let mut kem = MlKem::new();
+    let result = kem.decapsulate("00");
+
+    assert!(
+        result.is_err(),
+        "Decapsulation should fail for invalid ciphertext"
+    );
+}
+
+#[test]
+fn encapsulate_decapsulate_between_alice_and_bob() -> Result<(), MlKemErr> {
     let (pk, sk) = mlkem1024_keypair();
+    let pk = pk.as_bytes().to_vec();
+    let sk = sk.as_bytes().to_vec();
 
-    // Bob creates a MlKem instance with his keypair
-    let mut bob = MlKem::new();
-    bob.public_key(Pk(pk)).secret_key(Sk(sk));
+    let mut bob = MlKem::new().pk_and_sk(MlKemPkAndSk::new((Vec::new(), sk))?);
 
-    // Alice creates a MlKem instance with a default keypair
-    let mut alice = MlKem::new();
+    let mut alice = MlKem::new().pk_and_sk(MlKemPkAndSk::new((pk, Vec::new()))?);
 
-    // Alice sets her public key to Bob's public key to encapsulate a secret for Bob
-    alice.public_key(bob.public_key.clone());
-
-    // Alice encapsulates a shared secret producing ciphertext and shared secret
     let ciphertext = alice.encapsulate()?;
-
-    // Alice's shared secret (hex encoded)
     let alice_shared_secret = alice.shared_secret.clone().expect("missing");
-
-    // Bob decapsulates ciphertext to recover the shared secret using his secret key
     let bob_shared_secret = bob.decapsulate(&ciphertext)?;
 
-    // Both secrets must be identical for successful key exchange
     assert_eq!(alice_shared_secret, bob_shared_secret);
 
     Ok(())

@@ -1,53 +1,95 @@
-use bcrypt::{DEFAULT_COST, hash, verify};
-use kenzu::M_Builder;
-use mokuya::components::error::Error;
+use bcrypt::{BcryptError as RawBcryptError, DEFAULT_COST, hash, verify};
+use kenzu::Builder;
+use std::{error::Error as StdError, fmt};
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug)]
 pub enum BcryptError {
-    #[default]
-    InvalidCost,
-    HashFailed,
-    VerifyFailed,
-    InvalidHash,
+    Bcrypt(RawBcryptError),
+    InvalidCost(String),
+    Other(String),
 }
 
-pub type BcryptErr = Error<BcryptError>;
-
-fn bcrypt_err<T: ToString>(kind: BcryptError, code: u8) -> impl FnOnce(T) -> BcryptErr {
-    move |err: T| {
-        let mut error = BcryptErr::new();
-        error.description(err.to_string()).kind(kind).code(code);
-        error
+impl fmt::Display for BcryptError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BcryptError::Bcrypt(e) => write!(f, "bcrypt error: {}", e),
+            BcryptError::InvalidCost(s) => write!(f, "invalid cost: {}", s),
+            BcryptError::Other(s) => write!(f, "other: {}", s),
+        }
     }
 }
 
-#[derive(Debug, M_Builder)]
+impl StdError for BcryptError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            BcryptError::Bcrypt(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<RawBcryptError> for BcryptError {
+    fn from(e: RawBcryptError) -> Self {
+        BcryptError::Bcrypt(e)
+    }
+}
+
+impl From<String> for BcryptError {
+    fn from(s: String) -> Self {
+        BcryptError::Other(s)
+    }
+}
+
+impl From<&str> for BcryptError {
+    fn from(s: &str) -> Self {
+        BcryptError::Other(s.to_string())
+    }
+}
+
+pub type BcryptErr = BcryptError;
+
+#[derive(Debug, Builder)]
 pub struct Bcrypt {
-    #[build(pattern = "^.+$", err = "Password cannot be empty")]
+    //#[opt(pattern = "^.+$", err = "Build should fail for an empty password")]
     password: String,
-    #[set(value = DEFAULT_COST)]
+    #[opt(default = DEFAULT_COST)]
     cost: u32,
     hash: String,
 }
 
 impl Bcrypt {
     pub fn encrypt(&mut self) -> Result<String, BcryptErr> {
-        hash(&self.password, self.cost)
-            .inspect(|hash| {
-                self.hash(hash);
-            })
-            .map_err(bcrypt_err(BcryptError::HashFailed, 1))
+        if self.cost < 4 || self.cost > 31 {
+            return Err(BcryptErr::InvalidCost(format!(
+                "cost must be between 4 and 31, got {}",
+                self.cost
+            )));
+        }
+
+        let h = hash(&self.password, self.cost)?;
+        self.hash = h.clone();
+        Ok(h)
     }
 
     pub fn verify(&self) -> Result<(), BcryptErr> {
-        verify(&self.password, &self.hash)
-            .map_err(bcrypt_err(BcryptError::VerifyFailed, 2))
-            .and_then(|valid| {
-                if valid {
-                    Ok(())
-                } else {
-                    Err(bcrypt_err(BcryptError::VerifyFailed, 3)("Invalid password"))
-                }
-            })
+        if self.hash.is_empty() {
+            return Err(BcryptErr::Other("empty stored hash".into()));
+        }
+
+        let valid = verify(&self.password, &self.hash)?;
+        if valid {
+            Ok(())
+        } else {
+            Err(BcryptErr::Other("invalid password".into()))
+        }
+    }
+
+    pub fn verify_hash(&self, other_hash: &str) -> Result<(), BcryptErr> {
+        let valid = verify(&self.password, other_hash)?;
+        if valid {
+            Ok(())
+        } else {
+            Err(BcryptErr::Other("invalid password".into()))
+        }
     }
 }

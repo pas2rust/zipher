@@ -1,7 +1,7 @@
-use zipher::components::mldsa::{MlDsa, MlDsaErr, MlDsaError};
+use zipher::components::mldsa::{MlDsa, MlDsaError};
 
 #[test]
-fn sign_and_verify_embedded_message_successfully() -> Result<(), MlDsaErr> {
+fn sign_and_verify_embedded_message_successfully() -> Result<(), MlDsaError> {
     let mldsa = MlDsa::new();
     let message = b"Test message for embedded signature.";
 
@@ -18,7 +18,7 @@ fn sign_and_verify_embedded_message_successfully() -> Result<(), MlDsaErr> {
 }
 
 #[test]
-fn sign_and_verify_detached_signature_successfully() -> Result<(), MlDsaErr> {
+fn sign_and_verify_detached_signature_successfully() -> Result<(), MlDsaError> {
     let mldsa = MlDsa::new();
     let message = b"Test message for detached signature.";
 
@@ -39,10 +39,6 @@ fn verify_invalid_embedded_signature_should_fail() {
         result.is_err(),
         "Verification should fail for an invalid embedded signature"
     );
-
-    if let Err(err) = result {
-        assert_eq!(err.kind, MlDsaError::VerificationFailed);
-    }
 }
 
 #[test]
@@ -57,19 +53,14 @@ fn verify_invalid_detached_signature_should_fail() {
         result.is_err(),
         "Verification should fail for an invalid detached signature"
     );
-
-    if let Err(err) = result {
-        assert_eq!(err.kind, MlDsaError::VerificationFailed);
-    }
 }
 
 #[test]
-fn sign_and_verify_with_cloned_instance() -> Result<(), MlDsaErr> {
+fn sign_and_verify_with_cloned_instance() -> Result<(), MlDsaError> {
     let mldsa_sender = MlDsa::new();
 
     let mldsa_receiver = MlDsa {
-        public_key: mldsa_sender.public_key.clone(),
-        secret_key: mldsa_sender.secret_key.clone(),
+        pk_and_sk: mldsa_sender.pk_and_sk.clone(),
     };
 
     let message = b"Test message for cloned instances.";

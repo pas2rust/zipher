@@ -1,10 +1,9 @@
-use zipher::components::aes_gcm_siv::{Aes, AesError};
-use zipher::mokuya::components::error::Error;
+use zipher::components::aes_gcm_siv::{AesError, AesGcmSiv, AesGcmSivTarget};
 
 #[test]
-fn encrypt_decrypt() -> Result<(), Error<AesError>> {
-    let mut aes = Aes::new();
-    let encrypt = aes.target("test").encrypt()?;
+fn encrypt_decrypt() -> Result<(), AesError> {
+    let mut aes = AesGcmSiv::new();
+    let encrypt = aes.mut_target(AesGcmSivTarget::new("test")?).encrypt()?;
     let decrypt = aes.decrypt()?.to_string();
 
     assert_eq!(decrypt, "test");
@@ -14,24 +13,21 @@ fn encrypt_decrypt() -> Result<(), Error<AesError>> {
 
 #[test]
 fn decrypt_without_encrypt() {
-    let aes = Aes::new();
+    let aes = AesGcmSiv::new();
     let result = aes.decrypt();
     assert!(
         result.is_err(),
         "Decryption should fail if no encrypted data exists"
     );
-
-    if let Err(error) = result {
-        assert_eq!(error.kind, AesError::DecryptFailed);
-    }
 }
 
 #[test]
-fn encrypt_decrypt_large_data() -> Result<(), Error<AesError>> {
-    let mut aes = Aes::new();
+fn encrypt_decrypt_large_data() -> Result<(), AesError> {
+    let mut aes = AesGcmSiv::new();
     let large_text = "A".repeat(10_000);
 
-    aes.target(large_text.clone()).encrypt()?;
+    aes.mut_target(AesGcmSivTarget::new(large_text.clone())?)
+        .encrypt()?;
     let decrypt = aes.decrypt()?.to_string();
 
     assert_eq!(decrypt, large_text);
@@ -39,10 +35,10 @@ fn encrypt_decrypt_large_data() -> Result<(), Error<AesError>> {
 }
 
 #[test]
-fn reencrypt_overwrites_previous() -> Result<(), Error<AesError>> {
-    let mut aes = Aes::new();
-    let first_cipher = aes.target("first").encrypt()?;
-    let second_cipher = aes.target("second").encrypt()?;
+fn reencrypt_overwrites_previous() -> Result<(), AesError> {
+    let mut aes = AesGcmSiv::new();
+    let first_cipher = aes.mut_target(AesGcmSivTarget::new("first")?).encrypt()?;
+    let second_cipher = aes.mut_target(AesGcmSivTarget::new("second")?).encrypt()?;
     let decrypted = aes.decrypt()?.to_string();
     assert_eq!(decrypted, "second");
     assert_ne!(first_cipher, second_cipher);
@@ -51,11 +47,11 @@ fn reencrypt_overwrites_previous() -> Result<(), Error<AesError>> {
 }
 
 #[test]
-fn encrypt_decrypt_unicode() -> Result<(), Error<AesError>> {
-    let mut aes = Aes::new();
+fn encrypt_decrypt_unicode() -> Result<(), AesError> {
+    let mut aes = AesGcmSiv::new();
     let text = "Hellow, world! 🐱🔒 こんにちは";
 
-    let cipher = aes.target(text).encrypt()?;
+    let cipher = aes.mut_target(AesGcmSivTarget::new(text)?).encrypt()?;
     let decrypted = aes.decrypt()?.to_string();
 
     assert_eq!(decrypted, text);

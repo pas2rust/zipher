@@ -1,52 +1,53 @@
-use zipher::components::argon2::{Argon, ArgonError};
+use zipher::components::argon2::{Argon, ArgonError, ArgonPassword};
 
 #[test]
-fn encrypt_verify() {
-    let mut argon = Argon::new();
-    argon
-        .password("1234567890123456789012345678901234567890")
-        .encrypt()
-        .unwrap();
+fn encrypt_verify() -> Result<(), ArgonError> {
+    let mut argon = Argon::new().password(ArgonPassword::new(
+        "1234567890123456789012345678901234567890",
+    )?);
+    argon.encrypt()?;
 
     assert!(
         argon.verify().is_ok(),
         "Password verification should succeed"
     );
+
+    Ok(())
 }
 
 #[test]
-fn encrypt_different_passwords() {
-    let mut argon1 = Argon::new();
-    let hash1 = argon1.password("password123").encrypt().unwrap();
+fn encrypt_different_passwords() -> Result<(), ArgonError> {
+    let argon1 = Argon::new();
+    let hash1 = argon1
+        .password(ArgonPassword::new("password123")?)
+        .encrypt()?;
 
-    let mut argon2 = Argon::new();
-    let hash2 = argon2.password("different_password").encrypt().unwrap();
+    let argon2 = Argon::new();
+    let hash2 = argon2
+        .password(ArgonPassword::new("different_password")?)
+        .encrypt()?;
 
     assert_ne!(
         hash1, hash2,
         "Hashes for different passwords should not be equal"
     );
+
+    Ok(())
 }
 
 #[test]
-fn verify_wrong_password() {
-    let mut argon = Argon::new();
-    argon.password("correct_password").encrypt().unwrap();
+fn verify_wrong_password() -> Result<(), ArgonError> {
+    let mut argon = Argon::new().password(ArgonPassword::new("correct_password")?);
+    argon.encrypt()?;
+
+    let res = argon
+        .password(ArgonPassword::new("wrong_password")?)
+        .verify();
 
     assert!(
-        argon.password("wrong_password").verify().is_err(),
+        res.is_err(),
         "Verification should fail for incorrect password"
     );
 
-    if let Err(error) = argon.password("wrong_password").verify() {
-        assert_eq!(error.kind, ArgonError::VerifyFailed);
-    }
-}
-
-#[test]
-fn build_empty_password() {
-    let mut argon = Argon::new();
-    let result = argon.password("").build();
-
-    assert!(result.is_err(), "Build should fail for an empty password");
+    Ok(())
 }

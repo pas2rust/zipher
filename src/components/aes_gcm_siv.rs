@@ -1,40 +1,97 @@
-use std::fmt::{self, Debug};
+use std::{convert::TryInto, error::Error as StdError, fmt};
 
 use aes_gcm_siv::{
     Aes256GcmSiv, KeyInit,
     aead::{Aead, generic_array::GenericArray},
 };
-
-use kenzu::M_Builder;
-use mokuya::components::error::Error;
+use kenzu::Builder;
 use rand::Rng;
-
-#[derive(Debug, PartialEq, Default)]
-pub enum AesError {
-    #[default]
-    InvalidKeyLenght,
-    EncryptFailed,
-    DecryptFailed,
-    HexDecodeFailed,
-}
-
-fn aes_err<T: ToString>(kind: AesError, code: u8) -> impl FnOnce(T) -> AesErr {
-    move |err: T| {
-        let mut error = AesErr::new();
-        error.description(err.to_string()).kind(kind).code(code);
-        error
-    }
-}
 
 pub type AesKey = [u8; 32];
 pub type AesNonce = [u8; 12];
-pub type AesErr = Error<AesError>;
 
-#[derive(Debug, M_Builder)]
-pub struct Aes {
-    #[set(value = rand::rng().random::<AesKey>())]
+#[derive(Debug)]
+pub enum AesError {
+    Aead(aes_gcm_siv::Error),
+    Hex(hex::FromHexError),
+    TryFrom(std::array::TryFromSliceError),
+    Utf8(std::string::FromUtf8Error),
+    Other(String),
+}
+
+impl fmt::Display for AesError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AesError::Aead(e) => write!(f, "AEAD error: {}", e),
+            AesError::Hex(e) => write!(f, "hex decode error: {}", e),
+            AesError::TryFrom(e) => write!(f, "slice->array conversion error: {}", e),
+            AesError::Utf8(e) => write!(f, "utf8 error: {}", e),
+            AesError::Other(s) => write!(f, "other: {}", s),
+        }
+    }
+}
+
+impl StdError for AesError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            AesError::Aead(_) => None,
+            AesError::Hex(e) => Some(e),
+            AesError::TryFrom(e) => Some(e),
+            AesError::Utf8(e) => Some(e),
+            AesError::Other(_) => None,
+        }
+    }
+}
+
+impl From<aes_gcm_siv::Error> for AesError {
+    fn from(e: aes_gcm_siv::Error) -> Self {
+        AesError::Aead(e)
+    }
+}
+impl From<hex::FromHexError> for AesError {
+    fn from(e: hex::FromHexError) -> Self {
+        AesError::Hex(e)
+    }
+}
+impl From<std::array::TryFromSliceError> for AesError {
+    fn from(e: std::array::TryFromSliceError) -> Self {
+        AesError::TryFrom(e)
+    }
+}
+impl From<std::string::FromUtf8Error> for AesError {
+    fn from(e: std::string::FromUtf8Error) -> Self {
+        AesError::Utf8(e)
+    }
+}
+impl From<String> for AesError {
+    fn from(s: String) -> Self {
+        AesError::Other(s)
+    }
+}
+impl From<&str> for AesError {
+    fn from(s: &str) -> Self {
+        AesError::Other(s.to_string())
+    }
+}
+
+impl From<Vec<u8>> for AesError {
+    fn from(v: Vec<u8>) -> Self {
+        match String::from_utf8(v) {
+            Ok(s) => AesError::Other(s),
+            Err(e) => AesError::Other(format!("non-utf8 bytes: {:?}", e.into_bytes())),
+        }
+    }
+}
+
+pub type AesErr = AesError;
+
+#[derive(Builder, Debug)]
+pub struct AesGcmSiv {
+    #[opt(default = rand::rng().random::<[u8; 32]>())]
     key: AesKey,
+    #[opt(default = rand::rng().random::<[u8; 12]>())]
     nonce: AesNonce,
+    #[opt(pattern = "^.+$", err = "Build should fail for an empty target")]
     target: Vec<u8>,
     ciphertext: String,
 }
@@ -57,41 +114,30 @@ macro_rules! key_and_nonce {
     }};
 }
 
-impl Aes {
+impl AesGcmSiv {
     pub fn try_key<T: Into<Vec<u8>>>(&mut self, new: T) -> Result<&mut Self, AesErr> {
         let new_bytes: Vec<u8> = new.into();
-
-        let key: [u8; 32] = new_bytes.try_into().map_err(|_| {
-            let mut error = AesErr::new();
-            error
-                .description("Key must be 256 bits (32 bytes)")
-                .kind(AesError::InvalidKeyLenght)
-                .code(1);
-            error
-        })?;
-
-        Ok(self.key(key))
+        let key: [u8; 32] = new_bytes.try_into()?;
+        self.key = key;
+        Ok(self)
     }
 
     pub fn encrypt(&mut self) -> Result<String, AesErr> {
-        self.nonce(rand::rng().random::<AesNonce>());
         let (key, nonce) = key_and_nonce!(&self.key, &self.nonce);
-        let ciphertext = Aes256GcmSiv::new(key)
+        let ciphertext_vec = Aes256GcmSiv::new(key)
             .encrypt(nonce, self.target.as_ref())
-            .map_err(aes_err(AesError::EncryptFailed, 1))?;
-        let ciphertext = hex::encode(ciphertext);
-
-        self.ciphertext(ciphertext.clone());
+            .map_err(AesError::from)?;
+        let ciphertext = hex::encode(ciphertext_vec);
+        self.ciphertext = ciphertext.clone();
         Ok(ciphertext)
     }
+
     pub fn decrypt(&self) -> Result<AesDecrypt, AesErr> {
         let (key, nonce) = key_and_nonce!(&self.key, &self.nonce);
-        let ciphertext =
-            hex::decode(&self.ciphertext).map_err(aes_err(AesError::HexDecodeFailed, 3))?;
+        let ciphertext = hex::decode(&self.ciphertext).map_err(AesError::from)?;
         let decrypted = Aes256GcmSiv::new(key)
             .decrypt(nonce, ciphertext.as_ref())
-            .map_err(aes_err(AesError::DecryptFailed, 2))?;
-
+            .map_err(AesError::from)?;
         Ok(AesDecrypt(decrypted))
     }
 }

@@ -1,50 +1,77 @@
-use argon2::{
-    Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version,
-    password_hash::SaltString,
-};
-
-use kenzu::M_Builder;
-use mokuya::components::error::Error;
+use argon2::password_hash::{Error as PwhError, PasswordHash, SaltString};
+use argon2::{Algorithm, Argon2, Params, Version};
+use argon2::{PasswordHasher, PasswordVerifier};
+use kenzu::Builder;
 use rand::Rng;
+use std::{error::Error as StdError, fmt};
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug)]
 pub enum ArgonError {
-    #[default]
-    InvalidParams,
-    HashFailed,
-    VerifyFailed,
-    SaltEncodeFailed,
-    InvalidHash,
+    Argon2(argon2::Error),
+    PasswordHash(PwhError),
+    Other(String),
 }
 
-pub type ArgonErr = Error<ArgonError>;
-
-fn argon_err<T: ToString>(kind: ArgonError, code: u8) -> impl FnOnce(T) -> ArgonErr {
-    move |err: T| {
-        let mut error = ArgonErr::new();
-        error.description(err.to_string()).kind(kind).code(code);
-        error
+impl fmt::Display for ArgonError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ArgonError::Argon2(e) => write!(f, "argon2 error: {}", e),
+            ArgonError::PasswordHash(e) => write!(f, "password-hash error: {}", e),
+            ArgonError::Other(s) => write!(f, "other: {}", s),
+        }
     }
 }
 
-#[derive(Debug, M_Builder)]
+impl StdError for ArgonError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            ArgonError::Argon2(_) => None,
+            ArgonError::PasswordHash(_) => None,
+            _ => None,
+        }
+    }
+}
+
+impl From<argon2::Error> for ArgonError {
+    fn from(e: argon2::Error) -> Self {
+        ArgonError::Argon2(e)
+    }
+}
+impl From<PwhError> for ArgonError {
+    fn from(e: PwhError) -> Self {
+        ArgonError::PasswordHash(e)
+    }
+}
+impl From<String> for ArgonError {
+    fn from(s: String) -> Self {
+        ArgonError::Other(s)
+    }
+}
+impl From<&str> for ArgonError {
+    fn from(s: &str) -> Self {
+        ArgonError::Other(s.to_string())
+    }
+}
+
+pub type ArgonErr = ArgonError;
+
+#[derive(Debug, Builder)]
 pub struct Argon {
-    #[set(value = rand::rng().random::<[u8; 32]>())]
+    #[opt(default = rand::rng().random::<[u8; 32]>().to_vec())]
     salt: Vec<u8>,
-    #[set(value = hex::encode(rand::rng().random::<[u8; 32]>()))]
+    #[opt(default = hex::encode(rand::rng().random::<[u8; 32]>()))]
     secret: String,
-    #[set(value = Algorithm::Argon2id)]
+    #[opt(default = Algorithm::Argon2id)]
     algorithm: Algorithm,
-    #[set(value = Version::V0x13)]
+    #[opt(default = Version::V0x13)]
     version: Version,
-    #[set(value = Params::new(
-        6400,
+    #[opt(default = Params::new(
+        64_000,
         4,
         4,
         32.into()
     ).expect("Params error"))]
     params: Params,
-    #[build(pattern = "^.+$", err = "Build should fail for an empty password")]
     password: String,
     hash: String,
 }
@@ -56,20 +83,13 @@ impl Argon {
             self.algorithm,
             self.version,
             self.params.clone(),
-        )
-        .map_err(argon_err(ArgonError::InvalidParams, 1))?;
+        )?;
 
-        let base_64 = SaltString::encode_b64(&self.salt)
-            .map_err(argon_err(ArgonError::SaltEncodeFailed, 2))?;
-
-        match ctx.hash_password(self.password.as_bytes(), base_64.as_salt()) {
-            Ok(password_hash) => {
-                let hash = password_hash.serialize().to_string();
-                self.hash(&hash);
-                Ok(hash)
-            }
-            Err(err) => Err(argon_err(ArgonError::HashFailed, 3)(err)),
-        }
+        let base_64 = SaltString::encode_b64(&self.salt)?;
+        let password_hash = ctx.hash_password(self.password.as_bytes(), base_64.as_salt())?;
+        let hash = password_hash.serialize().to_string();
+        self.hash = hash.clone();
+        Ok(hash)
     }
 
     pub fn verify(&self) -> Result<(), ArgonErr> {
@@ -78,13 +98,10 @@ impl Argon {
             self.algorithm,
             self.version,
             self.params.clone(),
-        )
-        .map_err(argon_err(ArgonError::InvalidParams, 1))?;
+        )?;
 
-        let password_hash =
-            PasswordHash::new(&self.hash).map_err(argon_err(ArgonError::InvalidHash, 4))?;
-
-        ctx.verify_password(self.password.as_bytes(), &password_hash)
-            .map_err(argon_err(ArgonError::VerifyFailed, 5))
+        let password_hash = PasswordHash::new(&self.hash)?;
+        ctx.verify_password(self.password.as_bytes(), &password_hash)?;
+        Ok(())
     }
 }
