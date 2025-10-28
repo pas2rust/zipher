@@ -90,7 +90,7 @@ pub struct AesGcmSiv {
     #[opt(default = rand::rng().random::<[u8; 32]>())]
     key: AesKey,
     #[opt(default = rand::rng().random::<[u8; 12]>())]
-    nonce: AesNonce,
+    pub nonce: AesNonce,
     #[opt(pattern = "^.+$", err = "Build should fail for an empty target")]
     target: Vec<u8>,
     ciphertext: String,

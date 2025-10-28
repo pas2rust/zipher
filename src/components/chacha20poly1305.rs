@@ -89,7 +89,7 @@ pub struct ChaCha {
     #[opt(default = rand::rng().random::<[u8; 32]>())]
     key: ChaChaKeyType,
     #[opt(default = rand::rng().random::<[u8; 12]>())]
-    nonce: ChaChaNonceType,
+    pub nonce: ChaChaNonceType,
     #[opt(pattern = "^.+$", err = "Build should fail for an empty target")]
     target: Vec<u8>,
     ciphertext: String,
