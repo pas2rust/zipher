@@ -1,14 +1,18 @@
-use std::{convert::TryInto, error::Error as StdError, fmt};
+use std::{error::Error as StdError, fmt};
 
 use aes_gcm_siv::{
     Aes256GcmSiv, KeyInit,
-    aead::{Aead, generic_array::GenericArray},
+    aead::{
+        Aead,
+        generic_array::{
+            GenericArray,
+            typenum::{U12, U32},
+        },
+    },
 };
+
 use kenzu::Builder;
 use rand::Rng;
-
-pub type AesKey = [u8; 32];
-pub type AesNonce = [u8; 12];
 
 #[derive(Debug)]
 pub enum AesError {
@@ -83,17 +87,15 @@ impl From<Vec<u8>> for AesError {
     }
 }
 
-pub type AesErr = AesError;
-
 #[derive(Builder, Debug)]
 pub struct AesGcmSiv {
-    #[opt(default = rand::rng().random::<[u8; 32]>())]
-    key: AesKey,
-    #[opt(default = rand::rng().random::<[u8; 12]>())]
-    pub nonce: AesNonce,
+    #[opt(default = hex::encode(rand::rng().random::<[u8; 32]>()))]
+    pub key: String,
+    #[opt(default = hex::encode(rand::rng().random::<[u8; 12]>()))]
+    pub nonce: String,
     #[opt(pattern = "^.+$", err = "Build should fail for an empty target")]
-    target: Vec<u8>,
-    ciphertext: String,
+    pub target: Vec<u8>,
+    pub ciphertext: String,
 }
 
 #[derive(Debug)]
@@ -104,39 +106,36 @@ impl fmt::Display for AesDecrypt {
         write!(f, "{}", String::from_utf8_lossy(&self.0))
     }
 }
+type KeyGA = GenericArray<u8, U32>;
+type NonceGA = GenericArray<u8, U12>;
 
-macro_rules! key_and_nonce {
-    ($key:expr, $nonce:expr) => {{
-        let key_gen_array = GenericArray::from_slice($key);
-        let nonce_gen_array = GenericArray::from_slice($nonce);
+fn key_and_nonce_from_hex(key_hex: &str, nonce_hex: &str) -> Result<(KeyGA, NonceGA), AesError> {
+    let key_bytes = hex::decode(key_hex).map_err(AesError::from)?;
+    let nonce_bytes = hex::decode(nonce_hex).map_err(AesError::from)?;
+    let key_arr: [u8; 32] = key_bytes.as_slice().try_into().map_err(AesError::from)?;
+    let nonce_arr: [u8; 12] = nonce_bytes.as_slice().try_into().map_err(AesError::from)?;
+    let key_ga = *GenericArray::from_slice(&key_arr);
+    let nonce_ga = *GenericArray::from_slice(&nonce_arr);
 
-        (key_gen_array, nonce_gen_array)
-    }};
+    Ok((key_ga, nonce_ga))
 }
 
 impl AesGcmSiv {
-    pub fn try_key<T: Into<Vec<u8>>>(&mut self, new: T) -> Result<&mut Self, AesErr> {
-        let new_bytes: Vec<u8> = new.into();
-        let key: [u8; 32] = new_bytes.try_into()?;
-        self.key = key;
-        Ok(self)
-    }
-
-    pub fn encrypt(&mut self) -> Result<String, AesErr> {
-        let (key, nonce) = key_and_nonce!(&self.key, &self.nonce);
-        let ciphertext_vec = Aes256GcmSiv::new(key)
-            .encrypt(nonce, self.target.as_ref())
+    pub fn encrypt(&mut self) -> Result<String, AesError> {
+        let (key, nonce) = key_and_nonce_from_hex(&self.key, &self.nonce)?;
+        let ciphertext_vec = Aes256GcmSiv::new(&key)
+            .encrypt(&nonce, self.target.as_ref())
             .map_err(AesError::from)?;
         let ciphertext = hex::encode(ciphertext_vec);
         self.ciphertext = ciphertext.clone();
         Ok(ciphertext)
     }
 
-    pub fn decrypt(&self) -> Result<AesDecrypt, AesErr> {
-        let (key, nonce) = key_and_nonce!(&self.key, &self.nonce);
+    pub fn decrypt(&self) -> Result<AesDecrypt, AesError> {
+        let (key, nonce) = key_and_nonce_from_hex(&self.key, &self.nonce)?;
         let ciphertext = hex::decode(&self.ciphertext).map_err(AesError::from)?;
-        let decrypted = Aes256GcmSiv::new(key)
-            .decrypt(nonce, ciphertext.as_ref())
+        let decrypted = Aes256GcmSiv::new(&key)
+            .decrypt(&nonce, ciphertext.as_ref())
             .map_err(AesError::from)?;
         Ok(AesDecrypt(decrypted))
     }

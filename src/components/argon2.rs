@@ -53,31 +53,29 @@ impl From<&str> for ArgonError {
     }
 }
 
-pub type ArgonErr = ArgonError;
-
 #[derive(Debug, Builder)]
 pub struct Argon {
     #[opt(default = rand::rng().random::<[u8; 32]>().to_vec())]
-    salt: Vec<u8>,
+    pub salt: Vec<u8>,
     #[opt(default = hex::encode(rand::rng().random::<[u8; 32]>()))]
-    secret: String,
+    pub secret: String,
     #[opt(default = Algorithm::Argon2id)]
-    algorithm: Algorithm,
+    pub algorithm: Algorithm,
     #[opt(default = Version::V0x13)]
-    version: Version,
+    pub version: Version,
     #[opt(default = Params::new(
         64_000,
         4,
         4,
         32.into()
     ).expect("Params error"))]
-    params: Params,
-    password: String,
-    hash: String,
+    pub params: Params,
+    pub password: String,
+    pub hash: String,
 }
 
 impl Argon {
-    pub fn encrypt(&mut self) -> Result<String, ArgonErr> {
+    pub fn encrypt(&mut self) -> Result<String, ArgonError> {
         let ctx = Argon2::new_with_secret(
             self.secret.as_bytes(),
             self.algorithm,
@@ -92,7 +90,7 @@ impl Argon {
         Ok(hash)
     }
 
-    pub fn verify(&self) -> Result<(), ArgonErr> {
+    pub fn verify(&self) -> Result<(), ArgonError> {
         let ctx = Argon2::new_with_secret(
             self.secret.as_bytes(),
             self.algorithm,

@@ -1,14 +1,12 @@
-use std::{convert::TryInto, error::Error as StdError, fmt};
+use std::{error::Error as StdError, fmt};
 
 use chacha20poly1305::{
     ChaCha20Poly1305, KeyInit,
     aead::{Aead, generic_array::GenericArray},
+    consts::{U12, U32},
 };
 use kenzu::Builder;
 use rand::Rng;
-
-pub type ChaChaKeyType = [u8; 32];
-pub type ChaChaNonceType = [u8; 12];
 
 #[derive(Debug)]
 pub enum ChaChaError {
@@ -82,17 +80,15 @@ impl From<&str> for ChaChaError {
     }
 }
 
-pub type ChaChaErr = ChaChaError;
-
 #[derive(Debug, Builder)]
 pub struct ChaCha {
-    #[opt(default = rand::rng().random::<[u8; 32]>())]
-    key: ChaChaKeyType,
-    #[opt(default = rand::rng().random::<[u8; 12]>())]
-    pub nonce: ChaChaNonceType,
+    #[opt(default = hex::encode(rand::rng().random::<[u8; 32]>()))]
+    pub key: String,
+    #[opt(default = hex::encode(rand::rng().random::<[u8; 12]>()))]
+    pub nonce: String,
     #[opt(pattern = "^.+$", err = "Build should fail for an empty target")]
-    target: Vec<u8>,
-    ciphertext: String,
+    pub target: Vec<u8>,
+    pub ciphertext: String,
 }
 
 #[derive(Debug)]
@@ -104,39 +100,41 @@ impl fmt::Display for ChaChaDecrypt {
     }
 }
 
-macro_rules! key_and_nonce {
-    ($key:expr, $nonce:expr) => {{
-        let key_array = GenericArray::from_slice($key);
-        let nonce_array = GenericArray::from_slice($nonce);
-        (key_array, nonce_array)
-    }};
+type KeyGA = GenericArray<u8, U32>;
+type NonceGA = GenericArray<u8, U12>;
+
+fn key_and_nonce_from_hex(key_hex: &str, nonce_hex: &str) -> Result<(KeyGA, NonceGA), ChaChaError> {
+    let key_bytes = hex::decode(key_hex).map_err(ChaChaError::from)?;
+    let nonce_bytes = hex::decode(nonce_hex).map_err(ChaChaError::from)?;
+    let key_arr: [u8; 32] = key_bytes.as_slice().try_into().map_err(ChaChaError::from)?;
+    let nonce_arr: [u8; 12] = nonce_bytes
+        .as_slice()
+        .try_into()
+        .map_err(ChaChaError::from)?;
+    let key_ga = *GenericArray::from_slice(&key_arr);
+    let nonce_ga = *GenericArray::from_slice(&nonce_arr);
+
+    Ok((key_ga, nonce_ga))
 }
 
 impl ChaCha {
-    pub fn try_key<T: Into<Vec<u8>>>(&mut self, new: T) -> Result<&mut Self, ChaChaErr> {
-        let new_bytes: Vec<u8> = new.into();
-        let key: [u8; 32] = new_bytes.try_into()?;
-        self.key = key;
-        Ok(self)
-    }
+    pub fn encrypt(&mut self) -> Result<String, ChaChaError> {
+        let (key, nonce) = key_and_nonce_from_hex(&self.key, &self.nonce)?;
+        let cipher = ChaCha20Poly1305::new(&key);
 
-    pub fn encrypt(&mut self) -> Result<String, ChaChaErr> {
-        let (key, nonce) = key_and_nonce!(&self.key, &self.nonce);
-        let cipher = ChaCha20Poly1305::new(key);
-
-        let ciphertext_bytes = cipher.encrypt(nonce, self.target.as_ref())?;
+        let ciphertext_bytes = cipher.encrypt(&nonce, self.target.as_ref())?;
         let ciphertext_hex = hex::encode(ciphertext_bytes);
 
         self.ciphertext = ciphertext_hex.clone();
         Ok(ciphertext_hex)
     }
 
-    pub fn decrypt(&self) -> Result<ChaChaDecrypt, ChaChaErr> {
-        let (key, nonce) = key_and_nonce!(&self.key, &self.nonce);
-        let cipher = ChaCha20Poly1305::new(key);
+    pub fn decrypt(&self) -> Result<ChaChaDecrypt, ChaChaError> {
+        let (key, nonce) = key_and_nonce_from_hex(&self.key, &self.nonce)?;
+        let cipher = ChaCha20Poly1305::new(&key);
 
         let ciphertext_bytes = hex::decode(&self.ciphertext)?;
-        let decrypted = cipher.decrypt(nonce, ciphertext_bytes.as_ref())?;
+        let decrypted = cipher.decrypt(&nonce, ciphertext_bytes.as_ref())?;
         Ok(ChaChaDecrypt(decrypted))
     }
 }
